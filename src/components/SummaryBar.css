@@ -29,8 +29,8 @@
   font-size: 0.75rem;
   font-family: var(--font-mono);
   color: var(--text-primary);
-  background: rgba(167, 139, 250, 0.08);
-  border: 1px solid rgba(167, 139, 250, 0.15);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
 }
 

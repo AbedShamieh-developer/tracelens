@@ -53,13 +53,13 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
               onClick={() => update({ minLevel: lvl as LogLevel })}
               type="button"
             >
-              {lvl}
+              {lvl === 'DEBUG' ? 'Debug / All' : lvl}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Search + Toggles Row */}
+      {/* Search Row */}
       <div className="filterbar__row">
         <div className="filterbar__search-wrapper">
           <svg className="filterbar__search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -86,32 +86,6 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
               </svg>
             </button>
           )}
-        </div>
-
-        <div className="filterbar__toggles">
-          <label className="filterbar__toggle" id="toggle-app-only">
-            <input
-              type="checkbox"
-              checked={filters.appOnly}
-              onChange={e => update({ appOnly: e.target.checked })}
-            />
-            <span className="filterbar__toggle-track">
-              <span className="filterbar__toggle-thumb" />
-            </span>
-            <span className="filterbar__toggle-label">App only</span>
-          </label>
-
-          <label className="filterbar__toggle" id="toggle-hide-noise">
-            <input
-              type="checkbox"
-              checked={filters.hideNoise}
-              onChange={e => update({ hideNoise: e.target.checked })}
-            />
-            <span className="filterbar__toggle-track">
-              <span className="filterbar__toggle-thumb" />
-            </span>
-            <span className="filterbar__toggle-label">Hide noise</span>
-          </label>
         </div>
       </div>
     </div>

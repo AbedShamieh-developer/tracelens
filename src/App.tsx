@@ -12,8 +12,6 @@ const DEFAULT_FILTERS: FilterState = {
   window: 'all',
   minLevel: 'INFO',
   search: '',
-  appOnly: false,
-  hideNoise: true,
 };
 
 export default function App() {

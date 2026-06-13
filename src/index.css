@@ -172,11 +172,6 @@ body::after {
   50% { opacity: 0.5; }
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
 @keyframes borderGlow {
   0%, 100% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(255,255,255,0.05); }
   50% { border-color: rgba(255,255,255,0.35); box-shadow: 0 0 30px rgba(255,255,255,0.08); }

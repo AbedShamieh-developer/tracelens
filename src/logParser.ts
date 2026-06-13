@@ -36,12 +36,6 @@ const WINDOW_MINUTES: Record<TimeWindow, number> = {
   '4h': 240, '5h': 300, '12h': 720, '1d': 1440, 'all': 0,
 };
 
-const APP_PREFIXES = ['agentCore', 'tools', 'utils', 'lambda', 'src'];
-const NOISE_PREFIXES = [
-  'botocore', 'urllib3', 'httpcore', 'httpx', 'asyncio',
-  'strands.models', 'strands.tools.registry',
-];
-
 const LINE_RE = /^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[,.]\d{3})\s+-\s+(\S+)\s+-\s+(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s+-\s+(.*)$/s;
 
 // ── Helpers ────────────────────────────────────
@@ -69,10 +63,6 @@ function inferLevel(msg: string): { level: LogLevel; logger: string | null } {
   return { level: 'INFO', logger: null };
 }
 
-function startsWithAny(name: string, prefixes: string[]): boolean {
-  return prefixes.some(p => name === p || name.startsWith(p + '.'));
-}
-
 // ── CSV Parsing ────────────────────────────────
 
 function parseMessage(epochMs: number, rawMsg: string): LogEntry {
@@ -87,10 +77,22 @@ function parseMessage(epochMs: number, rawMsg: string): LogEntry {
       ts = ts.replace('+0000', '').trim();
       const level = ((obj.level || 'INFO').toUpperCase()) as LogLevel;
       const logger = obj.function || obj.logger || 'lambda_function';
+      const metadata: Record<string, unknown> | undefined =
+        obj.metadata && typeof obj.metadata === 'object' ? obj.metadata : undefined;
+      // Build the display message from remaining fields
+      const { timestamp: _t, level: _l, function: _f, logger: _lg, message, metadata: _m, requestId, requestid, ...rest } = obj;
+      const msgText = message || obj.msg || '';
+      const resolvedRequestId: string | undefined =
+        typeof requestId === 'string' ? requestId :
+        typeof requestid === 'string' ? requestid : undefined;
+      const extraFields = Object.keys(rest).length > 0 ? rest : undefined;
       return {
         epoch: epochMs, ts, logger,
         level: LEVEL_ORDER[level] !== undefined ? level : 'INFO',
-        msg: JSON.stringify(obj, null, 2), extra: '',
+        msg: msgText,
+        extra: extraFields ? JSON.stringify(extraFields, null, 2) : '',
+        requestId: resolvedRequestId,
+        metadata,
       };
     } catch { /* fall through */ }
   }
@@ -215,11 +217,7 @@ export function filterEntries(entries: LogEntry[], filters: FilterState): LogEnt
   return entries.filter(e => {
     if (cutoff && e.epoch < cutoff) return false;
     if ((LEVEL_ORDER[e.level] ?? 20) < minLvl) return false;
-    if (filters.appOnly && !startsWithAny(e.logger, APP_PREFIXES)) return false;
-    if (filters.hideNoise && startsWithAny(e.logger, NOISE_PREFIXES)) return false;
-    if (re && !(
-      re.test(e.logger) || re.test(e.msg) || (e.extra && re.test(e.extra))
-    )) return false;
+    if (re && !(re.test(e.logger) || re.test(e.msg) || (e.extra && re.test(e.extra)))) return false;
     return true;
   });
 }

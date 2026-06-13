@@ -159,73 +159,10 @@
   background: var(--bg-hover);
 }
 
-/* ---- Toggles ---- */
-.filterbar__toggles {
-  display: flex;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
-.filterbar__toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.filterbar__toggle input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.filterbar__toggle-track {
-  position: relative;
-  width: 36px;
-  height: 20px;
-  background: var(--bg-hover);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  transition: all var(--duration-fast) var(--ease);
-}
-
-.filterbar__toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  background: var(--text-tertiary);
-  border-radius: 50%;
-  transition: all var(--duration-fast) var(--ease);
-}
-
-.filterbar__toggle input:checked ~ .filterbar__toggle-track {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(255, 255, 255, 0.8);
-}
-
-.filterbar__toggle input:checked + .filterbar__toggle-track .filterbar__toggle-thumb {
-  left: 18px;
-  background: #fff;
-}
-
-.filterbar__toggle-label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .filterbar__row {
     flex-direction: column;
     align-items: stretch;
-  }
-  .filterbar__toggles {
-    justify-content: flex-start;
   }
 }

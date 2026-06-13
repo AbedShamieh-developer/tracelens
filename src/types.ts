@@ -11,6 +11,8 @@ export interface LogEntry {
   level: LogLevel;
   msg: string;
   extra: string;
+  requestId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LevelCounts {
@@ -27,6 +29,4 @@ export interface FilterState {
   window: TimeWindow;
   minLevel: LogLevel;
   search: string;
-  appOnly: boolean;
-  hideNoise: boolean;
 }

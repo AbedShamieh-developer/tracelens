@@ -1,0 +1,278 @@
+/* ================================================
+   DropZone — Premium Drag & Drop Area
+   ================================================ */
+
+.dropzone-wrapper {
+  animation: fadeInScale var(--duration-slow) var(--ease);
+  padding: 32px 0;
+}
+
+.dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-xl);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease);
+  overflow: hidden;
+}
+
+.dropzone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease);
+}
+
+.dropzone:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-glow);
+}
+
+.dropzone:hover::before {
+  opacity: 1;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+}
+
+/* ---- Dragging State ---- */
+.dropzone--dragging {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  animation: borderGlow 2s ease-in-out infinite;
+  transform: scale(1.005);
+}
+
+.dropzone--dragging::before {
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%) !important;
+}
+
+/* ---- Parsing State ---- */
+.dropzone--parsing {
+  border-color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+/* ---- Error State ---- */
+.dropzone--error {
+  border-color: var(--level-error) !important;
+}
+
+/* ---- Animated Border Overlay ---- */
+.dropzone__border {
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-xl);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease);
+}
+
+.dropzone--dragging .dropzone__border {
+  opacity: 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 10%,
+    transparent 20%,
+    transparent 80%,
+    rgba(255, 255, 255, 0.8) 90%,
+    transparent 100%
+  );
+  animation: spin 4s linear infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 2px;
+  border-radius: var(--radius-xl);
+}
+
+/* ---- Corner Accents ---- */
+.dropzone__corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease);
+}
+
+.dropzone:hover .dropzone__corner,
+.dropzone--dragging .dropzone__corner {
+  opacity: 1;
+}
+
+.dropzone__corner--tl { top: 12px; left: 12px; border-top: 2px solid rgba(255,255,255,0.4); border-left: 2px solid rgba(255,255,255,0.4); border-radius: 4px 0 0 0; }
+.dropzone__corner--tr { top: 12px; right: 12px; border-top: 2px solid rgba(255,255,255,0.4); border-right: 2px solid rgba(255,255,255,0.4); border-radius: 0 4px 0 0; }
+.dropzone__corner--bl { bottom: 12px; left: 12px; border-bottom: 2px solid rgba(255,255,255,0.4); border-left: 2px solid rgba(255,255,255,0.4); border-radius: 0 0 0 4px; }
+.dropzone__corner--br { bottom: 12px; right: 12px; border-bottom: 2px solid rgba(255,255,255,0.4); border-right: 2px solid rgba(255,255,255,0.4); border-radius: 0 0 4px 0; }
+
+/* ---- Content ---- */
+.dropzone__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+  text-align: center;
+}
+
+/* ---- Icon ---- */
+.dropzone__icon-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.dropzone__icon {
+  width: 120px;
+  height: auto;
+  opacity: 0.8;
+  transition: all var(--duration-normal) var(--ease);
+  object-fit: contain;
+}
+
+.dropzone:hover .dropzone__icon {
+  opacity: 1;
+  transform: translateY(-4px) scale(1.02);
+}
+
+.dropzone--dragging .dropzone__icon {
+  opacity: 1;
+  animation: float 1.5s ease-in-out infinite;
+}
+
+.dropzone__icon-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease);
+}
+
+.dropzone:hover .dropzone__icon-glow {
+  opacity: 1;
+}
+
+/* ---- Text ---- */
+.dropzone__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.dropzone__subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+.dropzone__hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* ---- Divider ---- */
+.dropzone__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 200px;
+  margin: 4px 0;
+}
+
+.dropzone__divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.dropzone__divider-text {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Browse Button ---- */
+.dropzone__browse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-focus);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.dropzone__browse-btn:hover {
+  background: var(--bg-hover);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.dropzone__browse-btn:active {
+  transform: translateY(0);
+  background: var(--bg-active);
+}
+
+/* ---- Error Message ---- */
+.dropzone__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  color: var(--level-error);
+  background: var(--level-error-bg);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  border-radius: var(--radius-full);
+  animation: fadeIn var(--duration-normal) var(--ease);
+}
+
+/* ---- Spinner ---- */
+.dropzone__parsing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.dropzone__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--text-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ---- Hidden Input ---- */
+.dropzone__input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}

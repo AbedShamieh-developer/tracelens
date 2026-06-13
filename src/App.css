@@ -1,0 +1,175 @@
+/* ================================================
+   App — Layout & Shell
+   ================================================ */
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---- Ambient Background Orbs ---- */
+.app__ambient {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app__ambient--1 {
+  top: -10%;
+  left: -5%;
+  width: 500px;
+  height: 500px;
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.app__ambient--2 {
+  bottom: -15%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(167, 139, 250, 0.03);
+}
+
+/* ---- Header ---- */
+.app__header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app__header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app__logo {
+  display: flex;
+  align-items: center;
+  transition: transform var(--duration-normal) var(--ease);
+}
+
+.app__logo-img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
+.app__logo:hover {
+  transform: rotate(-5deg) scale(1.05);
+}
+
+.app__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.app__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.app__title-accent {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app__subtitle {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---- New File Button ---- */
+.app__new-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.app__new-file-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Main ---- */
+.app__main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Viewer Layout ---- */
+.app__viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 0;
+  animation: fadeIn var(--duration-normal) var(--ease);
+}
+
+/* ---- Footer ---- */
+.app__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.app__footer-dot {
+  opacity: 0.4;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .app {
+    padding: 0 16px;
+  }
+
+  .app__title {
+    font-size: 1rem;
+  }
+
+  .app__subtitle {
+    display: none;
+  }
+}

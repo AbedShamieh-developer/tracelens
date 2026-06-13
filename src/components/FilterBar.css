@@ -1,0 +1,231 @@
+/* ================================================
+   FilterBar — Sleek Control Panel
+   ================================================ */
+
+.filterbar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  animation: fadeIn var(--duration-normal) var(--ease);
+}
+
+/* ---- Section ---- */
+.filterbar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterbar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Chips ---- */
+.filterbar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filterbar__chip {
+  padding: 5px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.filterbar__chip:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.filterbar__chip--active {
+  color: #000;
+  background: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+/* Level-specific chip colors when active */
+.filterbar__chip--level-debug.filterbar__chip--active {
+  background: var(--level-debug) !important;
+  border-color: var(--level-debug) !important;
+  box-shadow: 0 2px 8px rgba(110, 118, 129, 0.3);
+}
+.filterbar__chip--level-info.filterbar__chip--active {
+  background: var(--level-info) !important;
+  border-color: var(--level-info) !important;
+  box-shadow: 0 2px 8px rgba(63, 185, 80, 0.3);
+}
+.filterbar__chip--level-warning.filterbar__chip--active {
+  background: var(--level-warning) !important;
+  border-color: var(--level-warning) !important;
+  box-shadow: 0 2px 8px rgba(210, 153, 34, 0.3);
+}
+.filterbar__chip--level-error.filterbar__chip--active {
+  background: var(--level-error) !important;
+  border-color: var(--level-error) !important;
+  box-shadow: 0 2px 8px rgba(248, 81, 73, 0.3);
+}
+.filterbar__chip--level-critical.filterbar__chip--active {
+  background: var(--level-critical) !important;
+  border-color: var(--level-critical) !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+/* ---- Search + Toggles Row ---- */
+.filterbar__row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.filterbar__search-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.filterbar__search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.filterbar__search {
+  width: 100%;
+  padding: 10px 38px 10px 40px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.filterbar__search::placeholder {
+  color: var(--text-muted);
+}
+
+.filterbar__search:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.filterbar__search-clear {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.filterbar__search-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ---- Toggles ---- */
+.filterbar__toggles {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.filterbar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filterbar__toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.filterbar__toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.filterbar__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--text-tertiary);
+  border-radius: 50%;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.filterbar__toggle input:checked ~ .filterbar__toggle-track {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.filterbar__toggle input:checked + .filterbar__toggle-track .filterbar__toggle-thumb {
+  left: 18px;
+  background: #fff;
+}
+
+.filterbar__toggle-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .filterbar__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filterbar__toggles {
+    justify-content: flex-start;
+  }
+}

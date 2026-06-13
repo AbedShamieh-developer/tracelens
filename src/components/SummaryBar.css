@@ -1,0 +1,112 @@
+/* ================================================
+   SummaryBar — Stats Overview Strip
+   ================================================ */
+
+.summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  animation: fadeIn var(--duration-normal) var(--ease);
+}
+
+/* ---- Left Side ---- */
+.summary-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.summary-bar__file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: var(--radius-full);
+}
+
+.summary-bar__filename {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-bar__count {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.summary-bar__count strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ---- Level Badges ---- */
+.summary-bar__levels {
+  display: flex;
+  gap: 8px;
+}
+
+.summary-bar__level {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.summary-bar__level-name {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.summary-bar__level-count {
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* Level colors */
+.summary-bar__level--debug {
+  color: var(--level-debug);
+  background: var(--level-debug-bg);
+}
+.summary-bar__level--info {
+  color: var(--level-info);
+  background: var(--level-info-bg);
+}
+.summary-bar__level--warning {
+  color: var(--level-warning);
+  background: var(--level-warning-bg);
+}
+.summary-bar__level--error {
+  color: var(--level-error);
+  background: var(--level-error-bg);
+}
+.summary-bar__level--critical {
+  color: var(--level-critical);
+  background: var(--level-critical-bg);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .summary-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .summary-bar__levels {
+    flex-wrap: wrap;
+  }
+}

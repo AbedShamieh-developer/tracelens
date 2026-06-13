@@ -1,0 +1,318 @@
+/* ================================================
+   LogTable — Premium Log Entry Grid
+   ================================================ */
+
+.logtable-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: slideUp var(--duration-slow) var(--ease);
+}
+
+/* ---- Column Header ---- */
+.logtable__header {
+  display: grid;
+  grid-template-columns: 200px 200px 100px 1fr;
+  gap: 0;
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logtable__col {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 8px;
+}
+
+/* ---- Body ---- */
+.logtable__body {
+  max-height: 68vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ---- Row ---- */
+.logtable__row {
+  display: grid;
+  grid-template-columns: 200px 200px 100px 1fr;
+  gap: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(30, 36, 44, 0.5);
+  transition: background var(--duration-fast) var(--ease);
+  position: relative;
+}
+
+.logtable__row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.logtable__row:hover {
+  background: var(--bg-hover);
+}
+
+.logtable__row:hover::before {
+  opacity: 1;
+}
+
+/* Level-based left border */
+.logtable__row--debug::before  { background: var(--level-debug); }
+.logtable__row--info::before   { background: var(--level-info); }
+.logtable__row--warning::before { background: var(--level-warning); }
+.logtable__row--error::before  { background: var(--level-error); }
+.logtable__row--critical::before { background: var(--level-critical); }
+
+/* Level-based subtle row background */
+.logtable__row--error {
+  background: var(--level-error-bg);
+}
+.logtable__row--critical {
+  background: var(--level-critical-bg);
+}
+.logtable__row--warning {
+  background: var(--level-warning-bg);
+}
+
+.logtable__row--expanded {
+  background: var(--bg-hover) !important;
+}
+
+/* ---- Cells ---- */
+.logtable__cell {
+  padding: 2px 8px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.logtable__cell--ts {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.logtable__cell--logger {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.logtable__cell--level {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.logtable__cell--msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.logtable__msg-text {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ---- Level Badge ---- */
+.logtable__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.logtable__badge--debug {
+  color: var(--level-debug);
+  background: var(--level-debug-bg);
+  border: 1px solid rgba(110, 118, 129, 0.15);
+}
+.logtable__badge--info {
+  color: var(--level-info);
+  background: var(--level-info-bg);
+  border: 1px solid rgba(63, 185, 80, 0.15);
+}
+.logtable__badge--warning {
+  color: var(--level-warning);
+  background: var(--level-warning-bg);
+  border: 1px solid rgba(210, 153, 34, 0.15);
+}
+.logtable__badge--error {
+  color: var(--level-error);
+  background: var(--level-error-bg);
+  border: 1px solid rgba(248, 81, 73, 0.15);
+}
+.logtable__badge--critical {
+  color: var(--level-critical);
+  background: var(--level-critical-bg);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+}
+
+/* ---- Expand Button ---- */
+.logtable__expand-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-tertiary);
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.logtable__expand-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-active);
+  border-color: var(--border-default);
+}
+
+/* ---- Extra / JSON Details ---- */
+.logtable__extra {
+  grid-column: 1 / -1;
+  padding: 8px 16px 8px 32px;
+  animation: fadeIn var(--duration-fast) var(--ease);
+}
+
+.logtable__extra-pre {
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: #d1bcb1;
+  background: rgba(10, 13, 18, 0.6);
+  border-left: 3px solid var(--level-error);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ---- Empty State ---- */
+.logtable__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 80px 40px;
+  color: var(--text-tertiary);
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  animation: fadeIn var(--duration-slow) var(--ease);
+}
+
+.logtable__empty p {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.logtable__empty span {
+  font-size: 0.8125rem;
+}
+
+/* ---- Infinite Scroll Sentinel ---- */
+.logtable__sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.logtable__loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.logtable__loading-dots span {
+  width: 6px;
+  height: 6px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.logtable__loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.logtable__loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* ---- Footer ---- */
+.logtable__footer {
+  padding: 10px 16px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+  .logtable__header,
+  .logtable__row {
+    grid-template-columns: 160px 140px 80px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .logtable__header {
+    display: none;
+  }
+  .logtable__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 12px 16px;
+  }
+  .logtable__cell--ts {
+    order: 2;
+  }
+  .logtable__cell--level {
+    order: 1;
+  }
+  .logtable__cell--logger {
+    order: 3;
+  }
+  .logtable__cell--msg {
+    order: 4;
+  }
+}

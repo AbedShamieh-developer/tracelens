@@ -63,6 +63,48 @@ function inferLevel(msg: string): { level: LogLevel; logger: string | null } {
   return { level: 'INFO', logger: null };
 }
 
+// ── GZ (CloudWatch S3 export) Parsing ─────────
+
+export async function parseGZ(buffer: ArrayBuffer): Promise<LogEntry[]> {
+  // Decompress using native browser DecompressionStream
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  writer.write(buffer);
+  writer.close();
+
+  const reader = ds.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const text = new TextDecoder().decode(merged);
+  const json = JSON.parse(text);
+
+  // CloudWatch S3 export format: { logEvents: [{ timestamp, message }] }
+  if (!json.logEvents || !Array.isArray(json.logEvents)) {
+    throw new Error('Not a CloudWatch log export file');
+  }
+
+  const entries: LogEntry[] = json.logEvents.map(
+    (ev: { timestamp: number; message: string }) =>
+      parseMessage(ev.timestamp, ev.message)
+  );
+
+  entries.sort((a, b) => a.epoch - b.epoch);
+  return entries;
+}
+
 // ── CSV Parsing ────────────────────────────────
 
 function parseMessage(epochMs: number, rawMsg: string): LogEntry {
@@ -217,7 +259,7 @@ export function filterEntries(entries: LogEntry[], filters: FilterState): LogEnt
   return entries.filter(e => {
     if (cutoff && e.epoch < cutoff) return false;
     if ((LEVEL_ORDER[e.level] ?? 20) < minLvl) return false;
-    if (re && !(re.test(e.logger) || re.test(e.msg) || (e.extra && re.test(e.extra)))) return false;
+    if (re && !(re.test(e.logger) || re.test(e.msg) || (e.extra && re.test(e.extra)) || (e.requestId && re.test(e.requestId)))) return false;
     return true;
   });
 }

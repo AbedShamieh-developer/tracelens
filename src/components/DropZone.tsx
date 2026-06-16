@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef } from 'react';
-import { parseCSV } from '../logParser';
+import { parseCSV, parseGZ } from '../logParser';
 import type { LogEntry } from '../types';
 import './DropZone.css';
 
@@ -15,13 +15,37 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
   const dragCounter = useRef(0);
 
   const handleFile = useCallback((file: File) => {
-    if (!file.name.endsWith('.csv')) {
-      setError('Please drop a .csv file');
+    const isCSV = file.name.endsWith('.csv');
+    const isGZ = file.name.endsWith('.gz');
+
+    if (!isCSV && !isGZ) {
+      setError('Please drop a .csv or .gz file');
       setTimeout(() => setError(null), 3000);
       return;
     }
+
     setError(null);
     setIsParsing(true);
+
+    if (isGZ) {
+      file.arrayBuffer().then(buffer => {
+        parseGZ(buffer)
+          .then(entries => {
+            if (entries.length === 0) {
+              setError('No valid log entries found in this file');
+              setIsParsing(false);
+              return;
+            }
+            onFileParsed(entries, file.name);
+          })
+          .catch(() => setError('Failed to parse .gz file'))
+          .finally(() => setIsParsing(false));
+      }).catch(() => {
+        setError('Failed to read file');
+        setIsParsing(false);
+      });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -95,7 +119,7 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
         onClick={onClickBrowse}
         role="button"
         tabIndex={0}
-        aria-label="Drop CSV file here or click to browse"
+        aria-label="Drop CSV or GZ file here or click to browse"
       >
         {/* Animated border */}
         <div className="dropzone__border" />
@@ -120,12 +144,12 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
               </div>
 
               <h2 className="dropzone__title">
-                {isDragging ? 'Release to analyze' : 'Drop your CloudWatch CSV'}
+                {isDragging ? 'Release to analyze' : 'Drop your CloudWatch logs'}
               </h2>
               <p className="dropzone__subtitle">
                 {isDragging
                   ? 'We\'ll parse and visualize your logs instantly'
-                  : 'Drag & drop your csv here'}
+                  : 'CSV from Logs Insights · GZ from S3 export'}
               </p>
 
               <div className="dropzone__divider">
@@ -147,7 +171,7 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
                 Browse Files
               </button>
 
-              <p className="dropzone__hint">Supports .csv files from CloudWatch Logs Insights</p>
+              <p className="dropzone__hint">Supports .csv from CloudWatch Insights · .gz from S3 export</p>
             </>
           )}
 
@@ -165,7 +189,7 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.gz"
           onChange={onFileSelect}
           className="dropzone__input"
           aria-hidden="true"

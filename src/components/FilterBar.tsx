@@ -70,7 +70,7 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
             id="search-input"
             className="filterbar__search"
             type="text"
-            placeholder="Search logger or message (regex ok)…"
+            placeholder="Search by message, logger, request ID… (regex ok)"
             value={filters.search}
             onChange={e => update({ search: e.target.value })}
           />

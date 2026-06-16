@@ -93,6 +93,7 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  color-scheme: dark;
 }
 
 /* Background ambient effect — subtle white glow */

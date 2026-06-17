@@ -63,6 +63,192 @@ function inferLevel(msg: string): { level: LogLevel; logger: string | null } {
   return { level: 'INFO', logger: null };
 }
 
+// Returns true if the string contains a high ratio of non-printable/binary characters
+function isBinaryCorrupted(text: string): boolean {
+  if (!text || text.length === 0) return false;
+  const sample = text.slice(0, 200);
+  let binary = 0;
+  for (let i = 0; i < sample.length; i++) {
+    const code = sample.charCodeAt(i);
+    // Only flag ASCII control characters (excluding tab, newline, carriage return)
+    // and the Unicode replacement character — not extended Unicode
+    if ((code < 9) || (code > 13 && code < 32) || code === 0xfffd) binary++;
+  }
+  // Require at least 3 binary chars AND >15% ratio to avoid false positives
+  return binary >= 3 && binary / sample.length > 0.15;
+}
+
+function parseTimestampValue(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value < 10000000000 ? value * 1000 : value;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().replace('T', ' ').replace('Z', '').replace('+0000', '').replace(',', '.');
+  const parsed = Date.parse(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function parseLogText(text: string): LogEntry[] {
+  const trimmed = text.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return parseJsonLogPayload(parsed);
+  } catch {
+    return parseLineLogText(text);
+  }
+}
+
+export function parseFlexibleLogText(text: string): LogEntry[] {
+  return parseLogText(text)
+}
+
+function parseJsonLogPayload(payload: unknown): LogEntry[] {
+  if (Array.isArray(payload)) {
+    const entries = payload.flatMap((item) => {
+      if (typeof item === 'string') {
+        return parseLineLogText(item);
+      }
+
+      if (!item || typeof item !== 'object') {
+        return [];
+      }
+
+      const record = item as Record<string, unknown>;
+
+      if (Array.isArray(record.logEvents)) {
+        return parseCloudWatchExportJson({ logEvents: record.logEvents });
+      }
+
+      if (Array.isArray(record.records)) {
+        return parseJsonLogPayload(record.records);
+      }
+
+      const timestamp = parseTimestampValue(
+        record.timestamp ??
+          record.time ??
+          record['@timestamp'] ??
+          record.date ??
+          record.createdAt ??
+          record.lastModified,
+      );
+      const message = String(
+        record.message ??
+          record.msg ??
+          record.log ??
+          record.body ??
+          record.text ??
+          '',
+      );
+
+      if (!message && Object.keys(record).length === 0) {
+        return [];
+      }
+
+      // Drop Firehose processing-failed records — they have no message and contain
+      // errorCode + rawData from failed delivery attempts, not app logs
+      if (!message && typeof record.errorCode === 'string' && typeof record.rawData === 'string') {
+        return [];
+      }
+
+      const epoch = timestamp ?? Date.now();
+      return [parseMessage(epoch, message || JSON.stringify(record))];
+    });
+
+    entries.sort((a, b) => a.epoch - b.epoch);
+    return entries.filter(e => !isBinaryCorrupted(e.msg));
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Not a CloudWatch log export file');
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  if (Array.isArray(record.logEvents)) {
+    return parseCloudWatchExportJson(record);
+  }
+
+  if (Array.isArray(record.records)) {
+    return parseJsonLogPayload(record.records);
+  }
+
+  if (typeof record.message === 'string' || typeof record.msg === 'string') {
+    const epoch = parseTimestampValue(
+      record.timestamp ?? record.time ?? record['@timestamp'] ?? record.date ?? record.createdAt,
+    ) ?? Date.now();
+
+    return [parseMessage(epoch, String(record.message ?? record.msg))];
+  }
+
+  if (typeof record.body === 'string' || typeof record.content === 'string') {
+    return parseLogText(String(record.body ?? record.content));
+  }
+
+  throw new Error('Not a CloudWatch log export file');
+}
+
+function parseLineLogText(text: string): LogEntry[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const entries: LogEntry[] = [];
+
+  for (const line of lines) {
+    const jsonTimestampMatch = line.match(
+      /^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[,.]\d{3,6})?(?:Z|[+-]\d{2}:?\d{2})?)\s*(.*)$/,
+    );
+
+    if (jsonTimestampMatch) {
+      const epoch = parseTimestampValue(jsonTimestampMatch[1]) ?? Date.now();
+      entries.push(parseMessage(epoch, jsonTimestampMatch[2] || line));
+      continue;
+    }
+
+    try {
+      const parsedLine = JSON.parse(line) as unknown;
+
+      if (parsedLine && typeof parsedLine === 'object') {
+        const record = parsedLine as Record<string, unknown>;
+        const epoch = parseTimestampValue(
+          record.timestamp ?? record.time ?? record['@timestamp'] ?? record.date ?? record.createdAt,
+        ) ?? Date.now();
+        const message = String(
+          record.message ??
+            record.msg ??
+            record.log ??
+            record.body ??
+            record.text ??
+            line,
+        );
+        entries.push(parseMessage(epoch, message));
+        continue;
+      }
+    } catch {
+      // fall through to raw line parsing
+    }
+
+    entries.push(parseMessage(Date.now(), line));
+  }
+
+  entries.sort((a, b) => a.epoch - b.epoch);
+  return entries.filter(e => !isBinaryCorrupted(e.msg));
+}
+
 // ── GZ (CloudWatch S3 export) Parsing ─────────
 
 export async function parseGZ(buffer: ArrayBuffer): Promise<LogEntry[]> {
@@ -89,20 +275,29 @@ export async function parseGZ(buffer: ArrayBuffer): Promise<LogEntry[]> {
   }
 
   const text = new TextDecoder().decode(merged);
-  const json = JSON.parse(text);
+  return parseFlexibleLogText(text);
+}
 
-  // CloudWatch S3 export format: { logEvents: [{ timestamp, message }] }
-  if (!json.logEvents || !Array.isArray(json.logEvents)) {
-    throw new Error('Not a CloudWatch log export file');
+export function parseCloudWatchExportJson(json: unknown): LogEntry[] {
+  if (!json || typeof json !== 'object') {
+    throw new Error('Not a CloudWatch log export file')
   }
 
-  const entries: LogEntry[] = json.logEvents.map(
-    (ev: { timestamp: number; message: string }) =>
-      parseMessage(ev.timestamp, ev.message)
-  );
+  const record = json as Record<string, unknown>
 
-  entries.sort((a, b) => a.epoch - b.epoch);
-  return entries;
+  if (!Array.isArray(record.logEvents)) {
+    throw new Error('Not a CloudWatch log export file')
+  }
+
+  const entries: LogEntry[] = record.logEvents.map((event) => {
+    const logEvent = event as Record<string, unknown>
+    const epoch = parseTimestampValue(logEvent.timestamp) ?? Date.now()
+    const message = String(logEvent.message ?? logEvent.msg ?? '')
+    return parseMessage(epoch, message)
+  })
+
+  entries.sort((a, b) => a.epoch - b.epoch)
+  return entries.filter(e => !isBinaryCorrupted(e.msg))
 }
 
 // ── CSV Parsing ────────────────────────────────
@@ -114,25 +309,38 @@ function parseMessage(epochMs: number, rawMsg: string): LogEntry {
   // 1) JSON structured app log
   if (stripped.startsWith('{') && stripped.endsWith('}')) {
     try {
-      const obj = JSON.parse(stripped);
-      let ts = obj.timestamp || epochToTs(epochMs);
+      const obj = JSON.parse(stripped) as Record<string, unknown>;
+      let ts = String(obj.timestamp || epochToTs(epochMs));
       ts = ts.replace('+0000', '').trim();
-      const level = ((obj.level || 'INFO').toUpperCase()) as LogLevel;
-      const logger = obj.function || obj.logger || 'lambda_function';
+      const level = String(obj.level || 'INFO').toUpperCase() as LogLevel;
+      const logger = String(obj.function || obj.logger || 'lambda_function');
       const metadata: Record<string, unknown> | undefined =
-        obj.metadata && typeof obj.metadata === 'object' ? obj.metadata : undefined;
-      // Build the display message from remaining fields
-      const { timestamp: _t, level: _l, function: _f, logger: _lg, message, metadata: _m, requestId, requestid, ...rest } = obj;
-      const msgText = message || obj.msg || '';
+        obj.metadata && typeof obj.metadata === 'object' ? (obj.metadata as Record<string, unknown>) : undefined;
+      const requestId = obj.requestId;
+      const requestid = obj.requestid;
+      const msgText = typeof obj.message === 'string'
+        ? obj.message
+        : typeof obj.msg === 'string'
+          ? obj.msg
+          : String(obj.text ?? obj.body ?? '');
       const resolvedRequestId: string | undefined =
         typeof requestId === 'string' ? requestId :
         typeof requestid === 'string' ? requestid : undefined;
-      const extraFields = Object.keys(rest).length > 0 ? rest : undefined;
+      const extraFields = { ...obj };
+      delete extraFields.timestamp;
+      delete extraFields.level;
+      delete extraFields['function'];
+      delete extraFields.logger;
+      delete extraFields.message;
+      delete extraFields.msg;
+      delete extraFields.metadata;
+      delete extraFields.requestId;
+      delete extraFields.requestid;
       return {
         epoch: epochMs, ts, logger,
         level: LEVEL_ORDER[level] !== undefined ? level : 'INFO',
         msg: msgText,
-        extra: extraFields ? JSON.stringify(extraFields, null, 2) : '',
+        extra: Object.keys(extraFields).length > 0 ? JSON.stringify(extraFields, null, 2) : '',
         requestId: resolvedRequestId,
         metadata,
       };

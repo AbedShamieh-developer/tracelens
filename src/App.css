@@ -100,6 +100,46 @@
   gap: 12px;
 }
 
+.app__mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: var(--shadow-sm);
+}
+
+.app__mode-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+}
+
+.app__mode-button:hover {
+  color: var(--text-primary);
+}
+
+.app__mode-button--active {
+  color: #000;
+  background: var(--accent-gradient);
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.12);
+}
+
 .app__auth-actions,
 .app__user-area,
 .app__access-actions {
@@ -314,6 +354,16 @@
   .app__header-right {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .app__mode-switch {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app__mode-button {
+    flex: 1;
+    justify-content: center;
   }
 
   .app__auth-actions,

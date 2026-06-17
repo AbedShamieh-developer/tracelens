@@ -1,0 +1,198 @@
+.bucket-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 0 12px;
+  animation: fadeIn var(--duration-normal) var(--ease);
+}
+
+.bucket-view__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.bucket-view__title {
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.bucket-view__copy {
+  max-width: 62ch;
+  color: var(--text-secondary);
+}
+
+.bucket-view__state {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.02));
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.bucket-view__progress {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.bucket-view__state--error {
+  color: var(--level-error);
+  border-color: rgba(248, 81, 73, 0.18);
+  background: linear-gradient(180deg, rgba(248, 81, 73, 0.09), rgba(255, 255, 255, 0.02));
+}
+
+.bucket-view__note {
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+}
+
+.bucket-view__spinner {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-top-color: rgba(255, 255, 255, 0.78);
+  animation: spin 0.9s linear infinite;
+}
+
+.bucket-view__table-shell {
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: var(--shadow-md);
+}
+
+.bucket-view__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bucket-view__table th,
+.bucket-view__table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.bucket-view__table th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.bucket-view__table td {
+  color: var(--text-secondary);
+}
+
+.bucket-view__table tr:last-child td {
+  border-bottom: none;
+}
+
+.bucket-view__table td:first-child {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .bucket-view__table-shell {
+    overflow-x: auto;
+  }
+
+  .bucket-view__table {
+    min-width: 680px;
+  }
+}
+
+.bucket-view__refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  align-self: flex-start;
+}
+
+.bucket-view__refresh-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.bucket-view__refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Delivery Failures ---- */
+.bucket-view__failures {
+  margin-top: 8px;
+  border: 1px solid rgba(248, 81, 73, 0.15);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.bucket-view__failures-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--level-error);
+  background: rgba(248, 81, 73, 0.05);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.bucket-view__failures-toggle:hover {
+  background: rgba(248, 81, 73, 0.08);
+}
+
+.bucket-view__failures-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 1px 7px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  border-radius: var(--radius-full);
+}
+
+.bucket-view__failures-body {
+  border-top: 1px solid rgba(248, 81, 73, 0.1);
+}
+
+.bucket-view__failures-note {
+  padding: 10px 16px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}

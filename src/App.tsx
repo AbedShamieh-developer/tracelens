@@ -5,6 +5,7 @@ import FilterBar from './components/FilterBar'
 import SummaryBar from './components/SummaryBar'
 import LogTable from './components/LogTable'
 import UserGuide from './components/UserGuide'
+import BucketLogsView from './components/BucketLogsView'
 import { filterEntries, countLevels } from './logParser'
 import type { LogEntry, FilterState } from './types'
 import './App.css'
@@ -14,6 +15,8 @@ const DEFAULT_FILTERS: FilterState = {
   minLevel: 'INFO',
   search: '',
 }
+
+type AppMode = 'upload' | 'bucket'
 
 type ClerkUser = ReturnType<typeof useUser>['user']
 
@@ -111,6 +114,7 @@ export default function App() {
   const [allEntries, setAllEntries] = useState<LogEntry[]>([])
   const [fileName, setFileName] = useState('')
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
+  const [mode, setMode] = useState<AppMode>('upload')
   const { isLoaded, isSignedIn, user } = useUser()
 
   const handleFileParsed = useCallback((entries: LogEntry[], name: string) => {
@@ -130,6 +134,7 @@ export default function App() {
   const approved = isApprovedUser(user)
   const displayName = getDisplayName(user)
   const canUsePlatform = Boolean(isLoaded && isSignedIn && approved)
+  const isUploadMode = mode === 'upload'
 
   return (
     <div className="app">
@@ -149,23 +154,45 @@ export default function App() {
           </div>
         </div>
 
-        {canUsePlatform && hasData && (
-          <button
-            id="new-file-button"
-            className="app__new-file-btn"
-            onClick={handleNewFile}
-            type="button"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M7 1V13M1 7H13"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-            New File
-          </button>
+        {canUsePlatform && (
+          <div className="app__mode-switch" role="tablist" aria-label="TraceLens mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isUploadMode}
+              className={`app__mode-button ${isUploadMode ? 'app__mode-button--active' : ''}`}
+              onClick={() => setMode('upload')}
+            >
+              Upload mode
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!isUploadMode}
+              className={`app__mode-button ${!isUploadMode ? 'app__mode-button--active' : ''}`}
+              onClick={() => setMode('bucket')}
+            >
+              S3 bucket mode
+            </button>
+            {isUploadMode && hasData && (
+              <button
+                id="new-file-button"
+                className="app__new-file-btn"
+                onClick={handleNewFile}
+                type="button"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M7 1V13M1 7H13"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                New File
+              </button>
+            )}
+          </div>
         )}
 
         <div className="app__header-right">
@@ -207,7 +234,7 @@ export default function App() {
           <SignedOutState />
         ) : !approved ? (
           <PendingApprovalState />
-        ) : !hasData ? (
+        ) : isUploadMode ? !hasData ? (
           <>
             <DropZone onFileParsed={handleFileParsed} />
             <UserGuide />
@@ -223,6 +250,8 @@ export default function App() {
             />
             <LogTable entries={filtered} />
           </div>
+        ) : (
+          <BucketLogsView />
         )}
       </main>
 

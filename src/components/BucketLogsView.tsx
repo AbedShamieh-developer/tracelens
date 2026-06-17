@@ -9,6 +9,7 @@ import {
 } from '../logParser'
 import type { FilterState, LogEntry } from '../types'
 import FilterBar from './FilterBar'
+import InsightsView from './InsightsView'
 import LogTable from './LogTable'
 import SummaryBar from './SummaryBar'
 import './BucketLogsView.css'
@@ -247,6 +248,7 @@ export default function BucketLogsView() {
   const [downloadedCount, setDownloadedCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), [])
 
@@ -417,14 +419,61 @@ export default function BucketLogsView() {
             </div>
           )}
           <div className="app__viewer">
-            <FilterBar filters={filters} onChange={setFilters} />
-            <SummaryBar
-              filtered={filtered.length}
-              total={entries.length}
-              counts={counts}
-              fileName={fileName}
-            />
-            <LogTable entries={filtered} />
+            <div className="app__view-tabs" role="tablist">
+              <button
+                type="button" role="tab"
+                aria-selected={viewTab === 'logs'}
+                className={`app__view-tab ${viewTab === 'logs' ? 'app__view-tab--active' : ''}`}
+                onClick={() => setViewTab('logs')}
+              >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <rect x="1" y="3" width="11" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                  <rect x="1" y="6" width="8" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                  <rect x="1" y="9" width="9" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                </svg>
+                Logs
+              </button>
+              <button
+                type="button" role="tab"
+                aria-selected={viewTab === 'insights'}
+                className={`app__view-tab ${viewTab === 'insights' ? 'app__view-tab--active' : ''}`}
+                onClick={() => setViewTab('insights')}
+              >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M2 10L5 6L7.5 8L10 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Insights
+              </button>
+            </div>
+
+            {viewTab === 'logs' ? (
+              <>
+                <FilterBar filters={filters} onChange={setFilters} />
+                <SummaryBar
+                  filtered={filtered.length}
+                  total={entries.length}
+                  counts={counts}
+                  fileName={fileName}
+                />
+                <LogTable entries={filtered} />
+              </>
+            ) : (
+              <>
+                <SummaryBar
+                  filtered={filtered.length}
+                  total={entries.length}
+                  counts={counts}
+                  fileName={fileName}
+                />
+                <InsightsView
+                  entries={filtered.length < entries.length ? filtered : entries}
+                  onSelectGroup={(pattern) => {
+                    setFilters(f => ({ ...f, search: pattern }))
+                    setViewTab('logs')
+                  }}
+                />
+              </>
+            )}
           </div>
 
           {deliveryFailures.length > 0 && (

@@ -6,6 +6,7 @@ import SummaryBar from './components/SummaryBar'
 import LogTable from './components/LogTable'
 import UserGuide from './components/UserGuide'
 import BucketLogsView from './components/BucketLogsView'
+import InsightsView from './components/InsightsView'
 import { filterEntries, countLevels } from './logParser'
 import type { LogEntry, FilterState } from './types'
 import './App.css'
@@ -115,6 +116,7 @@ export default function App() {
   const [fileName, setFileName] = useState('')
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [mode, setMode] = useState<AppMode>('upload')
+  const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
   const { isLoaded, isSignedIn, user } = useUser()
 
   const handleFileParsed = useCallback((entries: LogEntry[], name: string) => {
@@ -126,6 +128,7 @@ export default function App() {
     setAllEntries([])
     setFileName('')
     setFilters(DEFAULT_FILTERS)
+    setViewTab('logs')
   }, [])
 
   const filtered = useMemo(() => filterEntries(allEntries, filters), [allEntries, filters])
@@ -241,14 +244,61 @@ export default function App() {
           </>
         ) : (
           <div className="app__viewer">
-            <FilterBar filters={filters} onChange={setFilters} />
-            <SummaryBar
-              filtered={filtered.length}
-              total={allEntries.length}
-              counts={counts}
-              fileName={fileName}
-            />
-            <LogTable entries={filtered} />
+            <div className="app__view-tabs" role="tablist">
+              <button
+                type="button" role="tab"
+                aria-selected={viewTab === 'logs'}
+                className={`app__view-tab ${viewTab === 'logs' ? 'app__view-tab--active' : ''}`}
+                onClick={() => setViewTab('logs')}
+              >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <rect x="1" y="3" width="11" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                  <rect x="1" y="6" width="8" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                  <rect x="1" y="9" width="9" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                </svg>
+                Logs
+              </button>
+              <button
+                type="button" role="tab"
+                aria-selected={viewTab === 'insights'}
+                className={`app__view-tab ${viewTab === 'insights' ? 'app__view-tab--active' : ''}`}
+                onClick={() => setViewTab('insights')}
+              >
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M2 10L5 6L7.5 8L10 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Insights
+              </button>
+            </div>
+
+            {viewTab === 'logs' ? (
+              <>
+                <FilterBar filters={filters} onChange={setFilters} />
+                <SummaryBar
+                  filtered={filtered.length}
+                  total={allEntries.length}
+                  counts={counts}
+                  fileName={fileName}
+                />
+                <LogTable entries={filtered} />
+              </>
+            ) : (
+              <>
+                <SummaryBar
+                  filtered={filtered.length}
+                  total={allEntries.length}
+                  counts={counts}
+                  fileName={fileName}
+                />
+                <InsightsView
+                  entries={filtered.length < allEntries.length ? filtered : allEntries}
+                  onSelectGroup={(pattern) => {
+                    setFilters(f => ({ ...f, search: pattern }))
+                    setViewTab('logs')
+                  }}
+                />
+              </>
+            )}
           </div>
         ) : (
           <BucketLogsView />
@@ -258,7 +308,7 @@ export default function App() {
       <footer className="app__footer">
         <span>Oreyeon</span>
         <span className="app__footer-dot">|</span>
-        <span>TraceLens v1.0.0</span>
+        <span>TraceLens v2.1.0</span>
       </footer>
     </div>
   )

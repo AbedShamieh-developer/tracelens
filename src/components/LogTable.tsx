@@ -109,8 +109,12 @@ export default function LogTable({ entries }: LogTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setVisibleCount(MAX_RENDER);
-    setExpandedRows(new Set());
+    const timer = window.setTimeout(() => {
+      setVisibleCount(MAX_RENDER);
+      setExpandedRows(new Set());
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [entries]);
 
   useEffect(() => {

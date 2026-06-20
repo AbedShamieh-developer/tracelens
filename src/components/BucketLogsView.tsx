@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import { fetchLogs } from '../api/logs'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchClients, fetchLogs } from '../api/logs'
 import {
   countLevels,
   filterEntries,
@@ -21,14 +21,25 @@ const DEFAULT_FILTERS: FilterState = {
   search: '',
 }
 
+const FALLBACK_CLIENTS = ['coimbra', 'yuma', 'dev']
+
 interface BucketSource {
   key: string
+  client?: string
+  bucket?: string
   lastModified?: string
   size?: number
   url?: string
   content?: string
   body?: unknown
   entries?: unknown
+}
+
+interface BucketPayload {
+  sources: BucketSource[]
+  client?: string
+  bucket?: string
+  count?: number
 }
 
 function isGzipBuffer(buffer: ArrayBuffer) {
@@ -40,7 +51,7 @@ function pickString(record: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = record[key]
     if (typeof value === 'string' && value.trim()) {
-      return value
+      return value.trim()
     }
   }
 
@@ -51,9 +62,17 @@ function getLabel(source: BucketSource) {
   return source.key || source.url || 'S3 bucket logs'
 }
 
-function normalizeBucketSources(payload: unknown): BucketSource[] {
+function formatTenantLabel(client?: string, bucket?: string) {
+  if (client && bucket) {
+    return `${client} / ${bucket}`
+  }
+
+  return bucket || client || 'S3 bucket logs'
+}
+
+function normalizeBucketSources(payload: unknown): BucketPayload {
   if (payload && typeof payload === 'object' && 'logEvents' in payload) {
-    return [{ key: 'S3 export', entries: payload }]
+    return { sources: [{ key: 'S3 export', entries: payload }] }
   }
 
   const items = Array.isArray(payload)
@@ -66,13 +85,20 @@ function normalizeBucketSources(payload: unknown): BucketSource[] {
       : []
 
   if (!Array.isArray(items)) {
-    return []
+    return { sources: [] }
   }
 
-  return items
-    .map((item) => {
+  const payloadRecord = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : undefined
+  const client = payloadRecord ? pickString(payloadRecord, ['client', 'tenant', 'tenantId']) : undefined
+  const bucket = payloadRecord ? pickString(payloadRecord, ['bucket', 'bucketName', 'name']) : undefined
+  const count = payloadRecord && typeof payloadRecord.count === 'number' ? payloadRecord.count : undefined
+
+  const sources = items
+    .map<BucketSource | null>((item) => {
       if (typeof item === 'string') {
-        return item.startsWith('http') ? { key: item, url: item } : { key: item }
+        return item.startsWith('http')
+          ? ({ key: item, url: item, client, bucket } as BucketSource)
+          : ({ key: item, client, bucket } as BucketSource)
       }
 
       if (!item || typeof item !== 'object') {
@@ -95,6 +121,8 @@ function normalizeBucketSources(payload: unknown): BucketSource[] {
 
       return {
         key,
+        client: pickString(record, ['client', 'tenant', 'tenantId']) ?? client,
+        bucket: pickString(record, ['bucket', 'bucketName', 'name']) ?? bucket,
         lastModified:
           pickString(record, ['lastModified', 'LastModified', 'last_modified']) ??
           (nested ? pickString(nested, ['lastModified', 'LastModified', 'last_modified']) : undefined),
@@ -127,9 +155,11 @@ function normalizeBucketSources(payload: unknown): BucketSource[] {
                   : undefined,
         body: record.body ?? nested?.body,
         entries: record.entries ?? record.logEntries ?? nested?.entries ?? nested?.logEntries,
-      } satisfies BucketSource
+      } as BucketSource
     })
-    .filter((item): item is BucketSource => Boolean(item?.key || item?.url || item?.content || item?.entries || item?.body))
+    .filter((item): item is BucketSource => Boolean(item && (item.key || item.url || item.content || item.entries || item.body)))
+
+  return { sources, client, bucket, count }
 }
 
 function isLogEntry(value: unknown): value is LogEntry {
@@ -150,6 +180,19 @@ function isLogEntry(value: unknown): value is LogEntry {
 
 function extractErrorMessage(reason: unknown) {
   return reason instanceof Error ? reason.message : String(reason)
+}
+
+function formatDownloadHint(url?: string) {
+  if (!url) {
+    return ''
+  }
+
+  try {
+    const { origin } = new URL(window.location.href)
+    return ` The browser tried to read ${new URL(url).origin} from ${origin}, which usually means the S3 bucket needs a CORS rule allowing this site, or the download must be proxied through your backend.`
+  } catch {
+    return ' The browser could not read the S3 object directly, which usually means the bucket needs a CORS rule or the download must be proxied through your backend.'
+  }
 }
 
 async function parseSource(source: BucketSource, signal: AbortSignal): Promise<LogEntry[]> {
@@ -187,34 +230,34 @@ async function parseSource(source: BucketSource, signal: AbortSignal): Promise<L
 
   const response = await fetch(source.url, {
     signal,
-    // Presigned S3 URLs require no extra headers — adding them breaks the signature
     headers: {},
   })
+  const downloadUrl = source.url
 
   if (!response.ok) {
-    throw new Error(`Failed to download ${getLabel(source)} (${response.status})`)
+    throw new Error(`Failed to download ${getLabel(source)} (${response.status})${formatDownloadHint(downloadUrl)}`)
   }
 
   const label = source.key || source.url
   const buffer = await response.arrayBuffer()
 
   if (label.toLowerCase().endsWith('.gz') || isGzipBuffer(buffer)) {
+    try {
+      return await parseGZ(buffer)
+    } catch (gzipError) {
+      const fallbackText = new TextDecoder().decode(buffer)
+
       try {
-        return await parseGZ(buffer)
-      } catch (gzipError) {
-        const fallbackText = new TextDecoder().decode(buffer)
-
-        try {
-          return parseFlexibleLogText(fallbackText)
-        } catch (textError) {
-          if (textError instanceof Error) {
-            textError.message = `Failed to parse ${label} as gzip (${extractErrorMessage(gzipError)}) or text (${textError.message})`
-          }
-
-          throw textError
+        return parseFlexibleLogText(fallbackText)
+      } catch (textError) {
+        if (textError instanceof Error) {
+          textError.message = `Failed to parse ${label} as gzip (${extractErrorMessage(gzipError)}) or text (${textError.message})`
         }
+
+        throw textError
       }
     }
+  }
 
   const text = new TextDecoder().decode(buffer)
 
@@ -225,7 +268,11 @@ async function parseSource(source: BucketSource, signal: AbortSignal): Promise<L
   }
 }
 
-function formatSourceLabel(sources: BucketSource[]) {
+function formatSourceLabel(sources: BucketSource[], client?: string, bucket?: string) {
+  if (bucket || client) {
+    return formatTenantLabel(client, bucket)
+  }
+
   if (sources.length === 0) {
     return 'S3 bucket logs'
   }
@@ -250,14 +297,86 @@ export default function BucketLogsView() {
   const [totalCount, setTotalCount] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
   const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
+  const [clients, setClients] = useState<string[]>(FALLBACK_CLIENTS)
+  const [selectedClient, setSelectedClient] = useState('coimbra')
+  const [bucketName, setBucketName] = useState<string>('')
+  const [clientsLoading, setClientsLoading] = useState(true)
+  const [clientMenuOpen, setClientMenuOpen] = useState(false)
+  const clientMenuRef = useRef<HTMLDivElement>(null)
 
-  const refresh = useCallback(() => setRefreshKey(k => k + 1), [])
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let active = true
+
+    async function loadClients() {
+      if (active) {
+        setClientsLoading(true)
+      }
+
+      try {
+        const remoteClients = await fetchClients(controller.signal)
+        if (!active) {
+          return
+        }
+
+        const nextClients = Array.from(new Set(remoteClients.length > 0 ? remoteClients : FALLBACK_CLIENTS))
+        setClients(nextClients)
+        setSelectedClient((current) => (nextClients.includes(current) ? current : nextClients[0] ?? ''))
+      } catch {
+        if (!active) {
+          return
+        }
+
+        setClients(FALLBACK_CLIENTS)
+        setSelectedClient((current) => (FALLBACK_CLIENTS.includes(current) ? current : FALLBACK_CLIENTS[0]))
+      } finally {
+        if (active) {
+          setClientsLoading(false)
+        }
+      }
+    }
+
+    loadClients()
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    function onDocumentPointerDown(event: PointerEvent) {
+      if (!clientMenuRef.current?.contains(event.target as Node)) {
+        setClientMenuOpen(false)
+      }
+    }
+
+    function onDocumentKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setClientMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', onDocumentPointerDown)
+    document.addEventListener('keydown', onDocumentKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', onDocumentPointerDown)
+      document.removeEventListener('keydown', onDocumentKeyDown)
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
     let active = true
 
     async function loadBucketLogs() {
+      if (!selectedClient) {
+        return
+      }
+
       if (active) {
         setLoading(true)
         setError(null)
@@ -267,16 +386,21 @@ export default function BucketLogsView() {
       }
 
       try {
-        const payload = await fetchLogs(controller.signal)
-        const nextSources = normalizeBucketSources(payload)
+        const payload = await fetchLogs(selectedClient, controller.signal)
+        const nextPayload = normalizeBucketSources(payload)
+        const nextSources = nextPayload.sources
 
         if (!nextSources.length) {
           throw new Error('No S3 objects were returned by the API')
         }
 
+        const nextBucket = nextPayload.bucket ?? ''
+        const nextObjectCount = nextPayload.count ?? nextSources.length
+
         if (active) {
           setSources(nextSources)
-          setTotalCount(nextSources.length)
+          setTotalCount(nextObjectCount)
+          setBucketName(nextBucket)
         }
 
         const results = await Promise.all(
@@ -305,7 +429,6 @@ export default function BucketLogsView() {
         for (const result of results) {
           if (result.status === 'fulfilled') {
             for (const entry of result.value) {
-              // Firehose delivery failure records have errorCode + rawData in extra, no real message
               if (!entry.msg && entry.extra.includes('"errorCode"') && entry.extra.includes('"rawData"')) {
                 nextFailures.push(entry)
               } else {
@@ -334,7 +457,7 @@ export default function BucketLogsView() {
           setNote(`Skipped ${failures.length} object(s) that could not be parsed.`)
         } else {
           setNote(
-            `Loaded ${nextEntries.length.toLocaleString()} log entries from ${nextSources.length.toLocaleString()} object(s).`,
+            `Loaded ${nextEntries.length.toLocaleString()} log entries from ${nextObjectCount.toLocaleString()} objects in ${formatTenantLabel(nextPayload.client ?? selectedClient, nextBucket)}.`,
           )
         }
       } catch (err) {
@@ -358,11 +481,11 @@ export default function BucketLogsView() {
       active = false
       controller.abort()
     }
-  }, [refreshKey])
+  }, [refreshKey, selectedClient])
 
   const filtered = useMemo(() => filterEntries(entries, filters), [entries, filters])
   const counts = useMemo(() => countLevels(filtered), [filtered])
-  const fileName = formatSourceLabel(sources)
+  const fileName = formatSourceLabel(sources, selectedClient, bucketName)
 
   return (
     <section className="bucket-view">
@@ -370,9 +493,65 @@ export default function BucketLogsView() {
         <p className="app__eyebrow">S3 bucket mode</p>
         <h2 className="bucket-view__title">TraceLens object log viewer</h2>
         <p className="bucket-view__copy">
-          This mode loads the objects from your S3-backed API, parses them, and shows the same
-          filters, summary, and log table as manual upload.
+          This mode loads each tenant&apos;s S3 bucket, downloads the presigned .gz objects, and
+          shows the same filters, summary, and log table as manual upload.
         </p>
+      </div>
+
+      <div className="bucket-view__controls-bar">
+        <div className="bucket-view__controls-group">
+          <span className="bucket-view__control-label">Client</span>
+          <div className="bucket-view__client-picker-shell" ref={clientMenuRef}>
+            <button
+              type="button"
+              className="bucket-view__client-trigger"
+              onClick={() => setClientMenuOpen((open) => !open)}
+              disabled={clientsLoading || loading}
+              aria-haspopup="listbox"
+              aria-expanded={clientMenuOpen}
+            >
+              <span className="bucket-view__client-trigger-value">{selectedClient || 'Choose client'}</span>
+              <svg
+                className={`bucket-view__client-trigger-icon ${clientMenuOpen ? 'bucket-view__client-trigger-icon--open' : ''}`}
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
+                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {clientMenuOpen && (
+              <div className="bucket-view__client-menu" role="listbox" aria-label="Choose client">
+                {clients.map((client) => {
+                  const active = client === selectedClient
+                  return (
+                    <button
+                      key={client}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={`bucket-view__client-option ${active ? 'bucket-view__client-option--active' : ''}`}
+                      onClick={() => {
+                        setSelectedClient(client)
+                        setClientMenuOpen(false)
+                      }}
+                    >
+                      <span className="bucket-view__client-option-name">{client}</span>
+                      {active && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L4.8 8.3L9.5 3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           type="button"
           className="bucket-view__refresh-btn"
@@ -381,15 +560,26 @@ export default function BucketLogsView() {
           aria-label="Refresh logs"
         >
           <svg
-            width="14" height="14" viewBox="0 0 14 14" fill="none"
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
             style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }}
           >
-            <path d="M12 2.5A5.5 5.5 0 1 1 8.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            <path d="M8.5 1.5V4.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 2.5A5.5 5.5 0 1 1 8.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M8.5 1.5V4.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {loading ? 'Loading…' : 'Refresh'}
+          {loading ? 'Refreshing' : 'Refresh'}
         </button>
       </div>
+
+      {!clientsLoading && clients.length > 0 && (
+        <div className="bucket-view__meta">
+          <span>Tenant: {selectedClient}</span>
+          {bucketName && <span>Bucket: {bucketName}</span>}
+          {totalCount > 0 && <span>Objects: {totalCount.toLocaleString()}</span>}
+        </div>
+      )}
 
       {loading ? (
         <div className="bucket-view__state">
@@ -406,8 +596,8 @@ export default function BucketLogsView() {
           <p>{error}</p>
           <button type="button" className="bucket-view__refresh-btn" onClick={refresh}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M12 2.5A5.5 5.5 0 1 1 8.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M8.5 1.5V4.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 2.5A5.5 5.5 0 1 1 8.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M8.5 1.5V4.5H11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Retry
           </button>
@@ -422,26 +612,28 @@ export default function BucketLogsView() {
           <div className="app__viewer">
             <div className="app__view-tabs" role="tablist">
               <button
-                type="button" role="tab"
+                type="button"
+                role="tab"
                 aria-selected={viewTab === 'logs'}
                 className={`app__view-tab ${viewTab === 'logs' ? 'app__view-tab--active' : ''}`}
                 onClick={() => setViewTab('logs')}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <rect x="1" y="3" width="11" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
-                  <rect x="1" y="6" width="8" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
-                  <rect x="1" y="9" width="9" height="1.5" rx="0.75" fill="currentColor" opacity="0.7"/>
+                  <rect x="1" y="3" width="11" height="1.5" rx="0.75" fill="currentColor" opacity="0.7" />
+                  <rect x="1" y="6" width="8" height="1.5" rx="0.75" fill="currentColor" opacity="0.7" />
+                  <rect x="1" y="9" width="9" height="1.5" rx="0.75" fill="currentColor" opacity="0.7" />
                 </svg>
                 Logs
               </button>
               <button
-                type="button" role="tab"
+                type="button"
+                role="tab"
                 aria-selected={viewTab === 'insights'}
                 className={`app__view-tab ${viewTab === 'insights' ? 'app__view-tab--active' : ''}`}
                 onClick={() => setViewTab('insights')}
               >
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <path d="M2 10L5 6L7.5 8L10 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 10L5 6L7.5 8L10 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Insights
               </button>
@@ -469,7 +661,7 @@ export default function BucketLogsView() {
                 <InsightsView
                   entries={filtered.length < entries.length ? filtered : entries}
                   onSelectGroup={(pattern) => {
-                    setFilters(f => ({ ...f, search: pattern }))
+                    setFilters((f) => ({ ...f, search: pattern }))
                     setViewTab('logs')
                   }}
                 />
@@ -482,14 +674,17 @@ export default function BucketLogsView() {
               <button
                 type="button"
                 className="bucket-view__failures-toggle"
-                onClick={() => setFailuresOpen(o => !o)}
+                onClick={() => setFailuresOpen((o) => !o)}
                 aria-expanded={failuresOpen}
               >
                 <svg
-                  width="12" height="12" viewBox="0 0 12 12" fill="none"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
                   style={{ transform: failuresOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}
                 >
-                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span>Delivery failures</span>
                 <span className="bucket-view__failures-count">{deliveryFailures.length}</span>

@@ -164,27 +164,19 @@ function parseJsonLogPayload(payload: unknown): LogEntry[] {
           record.createdAt ??
           record.lastModified,
       );
-      const message = String(
-        record.message ??
-          record.msg ??
-          record.log ??
-          record.body ??
-          record.text ??
-          '',
-      );
 
-      if (!message && Object.keys(record).length === 0) {
+      if (Object.keys(record).length === 0) {
         return [];
       }
 
       // Drop Firehose processing-failed records — they have no message and contain
       // errorCode + rawData from failed delivery attempts, not app logs
-      if (!message && typeof record.errorCode === 'string' && typeof record.rawData === 'string') {
+      if (typeof record.errorCode === 'string' && typeof record.rawData === 'string') {
         return [];
       }
 
       const epoch = timestamp ?? Date.now();
-      return [parseMessage(epoch, message || JSON.stringify(record))];
+      return [parseMessage(epoch, JSON.stringify(record))];
     });
 
     entries.sort((a, b) => a.epoch - b.epoch);
@@ -210,7 +202,7 @@ function parseJsonLogPayload(payload: unknown): LogEntry[] {
       record.timestamp ?? record.time ?? record['@timestamp'] ?? record.date ?? record.createdAt,
     ) ?? Date.now();
 
-    return [parseMessage(epoch, String(record.message ?? record.msg))];
+    return [parseMessage(epoch, JSON.stringify(record))];
   }
 
   if (typeof record.body === 'string' || typeof record.content === 'string') {
@@ -251,15 +243,7 @@ function parseLineLogText(text: string): LogEntry[] {
         const epoch = parseTimestampValue(
           record.timestamp ?? record.time ?? record['@timestamp'] ?? record.date ?? record.createdAt,
         ) ?? Date.now();
-        const message = String(
-          record.message ??
-            record.msg ??
-            record.log ??
-            record.body ??
-            record.text ??
-            line,
-        );
-        entries.push(parseMessage(epoch, message));
+        entries.push(parseMessage(epoch, JSON.stringify(record)));
         continue;
       }
     } catch {
@@ -509,3 +493,4 @@ export function countLevels(entries: LogEntry[]): LevelCounts {
   }
   return counts;
 }
+

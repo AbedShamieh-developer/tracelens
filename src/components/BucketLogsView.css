@@ -24,6 +24,143 @@
   color: var(--text-secondary);
 }
 
+.bucket-view__controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.bucket-view__controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bucket-view__control-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.bucket-view__client-picker-shell {
+  position: relative;
+  min-width: 220px;
+}
+
+.bucket-view__client-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  outline: none;
+  transition: all var(--duration-fast) var(--ease);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+}
+
+.bucket-view__client-trigger:hover:not(:disabled),
+.bucket-view__client-trigger[aria-expanded='true']:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
+.bucket-view__client-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bucket-view__client-trigger-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bucket-view__client-trigger-icon {
+  flex: none;
+  color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--ease);
+}
+
+.bucket-view__client-trigger-icon--open {
+  transform: rotate(180deg);
+}
+
+.bucket-view__client-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  padding: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.bucket-view__client-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+
+.bucket-view__client-option:hover,
+.bucket-view__client-option:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.bucket-view__client-option--active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bucket-view__client-option-name {
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+}
+
+.bucket-view__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
+
 .bucket-view__state {
   display: grid;
   place-items: center;
@@ -110,6 +247,31 @@
 }
 
 @media (max-width: 768px) {
+  .bucket-view__controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bucket-view__controls-group {
+    width: 100%;
+  }
+
+  .bucket-view__client-picker-shell {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .bucket-view__client-menu {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .bucket-view__refresh-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .bucket-view__table-shell {
     overflow-x: auto;
   }
@@ -123,10 +285,11 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 18px;
+  min-height: 38px;
+  padding: 0 16px;
   font-family: var(--font-sans);
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
@@ -143,7 +306,7 @@
 }
 
 .bucket-view__refresh-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 

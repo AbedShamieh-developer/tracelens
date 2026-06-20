@@ -11,6 +11,9 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
   const update = (patch: Partial<FilterState>) =>
     onChange({ ...filters, ...patch });
 
+  const today = new Date();
+  const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   return (
     <div className="filterbar" id="filter-bar">
       {/* Time Window */}
@@ -33,7 +36,36 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
               {tw.label}
             </button>
           ))}
+          <button
+            className={`filterbar__chip filterbar__chip--custom ${filters.window === 'custom' ? 'filterbar__chip--active' : ''}`}
+            onClick={() => update({ window: 'custom', customDate: filters.customDate || todayValue })}
+            type="button"
+          >
+            Custom
+          </button>
         </div>
+        {filters.window === 'custom' && (
+          <div className="filterbar__custom-date">
+            <label className="filterbar__custom-label" htmlFor="custom-date-input">
+              Start date
+            </label>
+            <input
+              id="custom-date-input"
+              className="filterbar__date-input"
+              type="date"
+              value={filters.customDate}
+              max={todayValue}
+              onChange={e => update({ customDate: e.target.value })}
+            />
+            <button
+              className="filterbar__custom-clear"
+              onClick={() => update({ customDate: '', window: 'all' })}
+              type="button"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Level Filter */}

@@ -26,7 +26,8 @@ export interface LevelCounts {
 export type TimeWindow = '5m' | '15m' | '30m' | '1h' | '2h' | '3h' | '4h' | '5h' | '12h' | '1d' | 'all';
 
 export interface FilterState {
-  window: TimeWindow;
+  window: TimeWindow | 'custom';
+  customDate: string;
   minLevel: LogLevel;
   search: string;
 }

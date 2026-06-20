@@ -65,6 +65,65 @@
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
 }
 
+.filterbar__chip--custom.filterbar__chip--active {
+  color: #0f172a;
+  background: linear-gradient(135deg, #f9d976, #f39f86) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px rgba(243, 159, 134, 0.35);
+}
+
+.filterbar__custom-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.filterbar__custom-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.filterbar__date-input {
+  min-width: 160px;
+  padding: 9px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.filterbar__date-input:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.filterbar__custom-clear {
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.filterbar__custom-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+}
+
 /* Level-specific chip colors when active */
 .filterbar__chip--level-debug.filterbar__chip--active {
   background: var(--level-debug) !important;
@@ -164,5 +223,13 @@
   .filterbar__row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .filterbar__custom-date {
+    align-items: stretch;
+  }
+
+  .filterbar__date-input {
+    width: 100%;
   }
 }

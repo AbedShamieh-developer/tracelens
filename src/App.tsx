@@ -13,6 +13,7 @@ import './App.css'
 
 const DEFAULT_FILTERS: FilterState = {
   window: 'all',
+  customDate: '',
   minLevel: 'INFO',
   search: '',
 }
@@ -308,7 +309,7 @@ export default function App() {
       <footer className="app__footer">
         <span>Oreyeon</span>
         <span className="app__footer-dot">|</span>
-        <span>TraceLens v2.1.0</span>
+        <span>TraceLens v2.1.1</span>
       </footer>
     </div>
   )

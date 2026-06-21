@@ -166,7 +166,8 @@ export default function LogTable({ entries }: LogTableProps) {
           return (
             <div
               key={`${entry.epoch}-${idx}`}
-              className={`logtable__row logtable__row--${entry.level.toLowerCase()} ${isExpanded ? 'logtable__row--expanded' : ''}`}
+              className={`logtable__row logtable__row--${entry.level.toLowerCase()} ${isExpanded ? 'logtable__row--expanded' : ''} ${hasExtra ? 'logtable__row--clickable' : ''}`}
+              onClick={() => hasExtra && toggleRow(idx)}
             >
               {/* Header: badge · timestamp · logger · requestId · copy · expand */}
               <div className="logtable__entry-header">
@@ -189,7 +190,10 @@ export default function LogTable({ entries }: LogTableProps) {
                     <button
                       className="logtable__expand-btn"
                       aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
-                      onClick={() => toggleRow(idx)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRow(idx);
+                      }}
                       type="button"
                     >
                       <svg
@@ -202,11 +206,8 @@ export default function LogTable({ entries }: LogTableProps) {
                   )}
                 </div>              </div>
 
-              {/* Message — click to expand/collapse when there's extra data */}
-              <div
-                className={`logtable__entry-msg ${hasExtra ? 'logtable__entry-msg--clickable' : ''}`}
-                onClick={() => hasExtra && toggleRow(idx)}
-              >
+              {/* Message */}
+              <div className="logtable__entry-msg">
                 {entry.msg}
               </div>
 

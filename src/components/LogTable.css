@@ -44,6 +44,10 @@
   background: var(--bg-hover) !important;
 }
 
+.logtable__row--clickable {
+  cursor: pointer;
+}
+
 /* ---- Entry Header ---- */
 .logtable__entry-header {
   display: flex;

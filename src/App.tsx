@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { ClerkLoading, Show, SignInButton, SignOutButton, SignUpButton, UserButton, useUser } from '@clerk/react'
+import { ClerkLoading, SignInButton, SignOutButton, SignUpButton, UserButton, useUser } from '@clerk/clerk-react'
 import DropZone from './components/DropZone'
 import FilterBar from './components/FilterBar'
 import SummaryBar from './components/SummaryBar'
@@ -200,7 +200,7 @@ export default function App() {
         )}
 
         <div className="app__header-right">
-          <Show when="signed-out">
+          {!isSignedIn && (
             <div className="app__auth-actions">
               <SignInButton mode="modal">
                 <button type="button" className="app__auth-btn app__auth-btn--secondary">
@@ -213,8 +213,8 @@ export default function App() {
                 </button>
               </SignUpButton>
             </div>
-          </Show>
-          <Show when="signed-in">
+          )}
+          {isSignedIn && (
             <div className="app__user-area">
               {approved ? (
                 <span className="app__status-pill app__status-pill--welcome">
@@ -227,7 +227,7 @@ export default function App() {
               )}
               <UserButton />
             </div>
-          </Show>
+          )}
         </div>
       </header>
 

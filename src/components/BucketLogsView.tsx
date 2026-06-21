@@ -16,7 +16,8 @@ import './BucketLogsView.css'
 
 const DEFAULT_FILTERS: FilterState = {
   window: 'all',
-  customDate: '',
+  customFromDate: '',
+  customToDate: '',
   minLevel: 'INFO',
   search: '',
 }

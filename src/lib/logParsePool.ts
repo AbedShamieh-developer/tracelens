@@ -1,3 +1,4 @@
+import { parseFlexibleLogText, parseGZ } from '../logParser'
 import type { LogEntry } from '../types'
 
 type ParseRequest = {
@@ -21,31 +22,50 @@ type PendingTask = {
 const WORKER_URL = new URL('../workers/logParseWorker.ts', import.meta.url)
 
 export class LogParsePool {
-  private readonly workers: Worker[]
-  private readonly idleWorkers: Worker[]
+  private workers: Worker[]
+  private idleWorkers: Worker[]
   private readonly pending = new Map<number, PendingTask>()
   private readonly queue: PendingTask[] = []
   private nextId = 0
   private destroyed = false
+  private fallbackMode = false
 
   constructor(workerCount = 2) {
+    if (import.meta.env.PROD) {
+      this.workers = []
+      this.idleWorkers = []
+      this.fallbackMode = true
+      return
+    }
+
     const count = Math.max(1, workerCount)
-    this.workers = Array.from({ length: count }, () => {
-      const worker = new Worker(WORKER_URL, { type: 'module' })
-      worker.onmessage = (event: MessageEvent<ParseResponse>) => {
-        this.handleMessage(worker, event.data)
-      }
-      worker.onerror = (event) => {
-        this.handleWorkerError(worker, event.message || 'Unknown worker error')
-      }
-      return worker
-    })
-    this.idleWorkers = [...this.workers]
+    this.workers = []
+    this.idleWorkers = []
+
+    try {
+      this.workers = Array.from({ length: count }, () => {
+        const worker = new Worker(WORKER_URL, { type: 'module' })
+        worker.onmessage = (event: MessageEvent<ParseResponse>) => {
+          this.handleMessage(worker, event.data)
+        }
+        worker.onerror = (event) => {
+          this.handleWorkerError(worker, event.message || 'Unknown worker error')
+        }
+        return worker
+      })
+      this.idleWorkers = [...this.workers]
+    } catch (error) {
+      this.enableFallback(error instanceof Error ? error.message : 'Failed to initialize parser workers')
+    }
   }
 
   parse(key: string, buffer: ArrayBuffer): Promise<LogEntry[]> {
     if (this.destroyed) {
       return Promise.reject(new Error('Parser pool has been destroyed'))
+    }
+
+    if (this.fallbackMode) {
+      return this.parseDirect(key, buffer)
     }
 
     const id = ++this.nextId
@@ -83,7 +103,7 @@ export class LogParsePool {
   }
 
   private drain() {
-    if (this.destroyed) {
+    if (this.destroyed || this.fallbackMode) {
       return
     }
 
@@ -96,7 +116,7 @@ export class LogParsePool {
       }
 
       this.pending.set(task.request.id, task)
-      worker.postMessage(task.request, [task.request.buffer])
+      worker.postMessage(task.request)
     }
   }
 
@@ -121,15 +141,75 @@ export class LogParsePool {
   }
 
   private handleWorkerError(worker: Worker, message: string) {
-    for (const [id, pending] of this.pending.entries()) {
-      pending.reject(new Error(message))
-      this.pending.delete(id)
-    }
-
     const index = this.idleWorkers.indexOf(worker)
     if (index >= 0) {
       this.idleWorkers.splice(index, 1)
     }
+
+    this.enableFallback(message)
+  }
+
+  private enableFallback(message?: string) {
+    if (this.fallbackMode || this.destroyed) {
+      return
+    }
+
+    if (message) {
+      console.warn(`[TraceLens] Parser workers unavailable, falling back to main-thread parsing: ${message}`)
+    }
+
+    this.fallbackMode = true
+
+    for (const worker of this.workers) {
+      worker.terminate()
+    }
+
+    this.workers = []
+    this.idleWorkers.length = 0
+
+    const pendingTasks = [...this.pending.values()]
+    this.pending.clear()
+
+    for (const task of pendingTasks) {
+      this.queue.unshift(task)
+    }
+
+    void this.flushFallbackQueue()
+  }
+
+  private async flushFallbackQueue() {
+    while (!this.destroyed && this.queue.length > 0) {
+      const task = this.queue.shift()
+      if (!task) {
+        continue
+      }
+
+      try {
+        const entries = await this.parseDirect(task.request.key, task.request.buffer)
+        task.resolve(entries)
+      } catch (error) {
+        task.reject(error instanceof Error ? error : new Error('Failed to parse log object'))
+      }
+    }
+  }
+
+  private async parseDirect(key: string, buffer: ArrayBuffer) {
+    if (key.toLowerCase().endsWith('.gz') || this.isGzipBuffer(buffer)) {
+      try {
+        return await parseGZ(buffer)
+      } catch {
+        const text = new TextDecoder().decode(buffer)
+        return parseFlexibleLogText(text)
+      }
+    }
+
+    const text = new TextDecoder().decode(buffer)
+    return parseFlexibleLogText(text)
+  }
+
+  private isGzipBuffer(buffer: ArrayBuffer) {
+    const bytes = new Uint8Array(buffer)
+    return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b
   }
 }
 

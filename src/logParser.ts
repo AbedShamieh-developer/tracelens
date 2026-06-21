@@ -112,7 +112,8 @@ function parseLocalDateBounds(value: string): { start: number; end: number } | n
   }
 
   const start = parsed.getTime();
-  const end = start + 24 * 60 * 60 * 1000;
+  const end = new Date(year, month - 1, day + 1, 0, 0, 0, 0).getTime();
+
   return { start, end };
 }
 
@@ -468,17 +469,15 @@ export function filterEntries(entries: LogEntry[], filters: FilterState): LogEnt
 
   const now = Date.now();
   const windowMin = filters.window === 'custom' ? 0 : WINDOW_MINUTES[filters.window];
-  const customBounds = filters.window === 'custom' ? parseLocalDateBounds(filters.customDate) : null;
-  const cutoff = customBounds
-    ? customBounds.start
-    : windowMin > 0
-      ? now - windowMin * 60 * 1000
-      : 0;
+  const customFromBounds = filters.window === 'custom' ? parseLocalDateBounds(filters.customFromDate) : null;
+  const customToBounds = filters.window === 'custom' ? parseLocalDateBounds(filters.customToDate) : null;
+  const cutoff = windowMin > 0 ? now - windowMin * 60 * 1000 : 0;
   const minLvl = LEVEL_ORDER[filters.minLevel] ?? 20;
   const re = compileSearch(filters.search);
 
   return entries.filter(e => {
-    if (customBounds && (e.epoch < customBounds.start || e.epoch >= customBounds.end)) return false;
+    if (customFromBounds && e.epoch < customFromBounds.start) return false;
+    if (customToBounds && e.epoch >= customToBounds.end) return false;
     if (cutoff && e.epoch < cutoff) return false;
     if ((LEVEL_ORDER[e.level] ?? 20) < minLvl) return false;
     if (re && !(re.test(e.logger) || re.test(e.msg) || (e.extra && re.test(e.extra)) || (e.requestId && re.test(e.requestId)))) return false;

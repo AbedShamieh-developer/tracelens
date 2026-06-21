@@ -38,7 +38,11 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
           ))}
           <button
             className={`filterbar__chip filterbar__chip--custom ${filters.window === 'custom' ? 'filterbar__chip--active' : ''}`}
-            onClick={() => update({ window: 'custom', customDate: filters.customDate || todayValue })}
+            onClick={() => update({
+              window: 'custom',
+              customFromDate: filters.customFromDate || todayValue,
+              customToDate: filters.customToDate || todayValue,
+            })}
             type="button"
           >
             Custom
@@ -46,20 +50,36 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         </div>
         {filters.window === 'custom' && (
           <div className="filterbar__custom-date">
-            <label className="filterbar__custom-label" htmlFor="custom-date-input">
-              Start date
-            </label>
-            <input
-              id="custom-date-input"
-              className="filterbar__date-input"
-              type="date"
-              value={filters.customDate}
-              max={todayValue}
-              onChange={e => update({ customDate: e.target.value })}
-            />
+            <div className="filterbar__date-field">
+              <label className="filterbar__custom-label" htmlFor="custom-from-date-input">
+                From
+              </label>
+              <input
+                id="custom-from-date-input"
+                className="filterbar__date-input"
+                type="date"
+                value={filters.customFromDate}
+                max={filters.customToDate || todayValue}
+                onChange={e => update({ customFromDate: e.target.value })}
+              />
+            </div>
+            <div className="filterbar__date-field">
+              <label className="filterbar__custom-label" htmlFor="custom-to-date-input">
+                To
+              </label>
+              <input
+                id="custom-to-date-input"
+                className="filterbar__date-input"
+                type="date"
+                value={filters.customToDate}
+                min={filters.customFromDate || undefined}
+                max={todayValue}
+                onChange={e => update({ customToDate: e.target.value })}
+              />
+            </div>
             <button
               className="filterbar__custom-clear"
-              onClick={() => update({ customDate: '', window: 'all' })}
+              onClick={() => update({ customFromDate: '', customToDate: '', window: 'all' })}
               type="button"
             >
               Clear

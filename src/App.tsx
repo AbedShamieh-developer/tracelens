@@ -13,7 +13,8 @@ import './App.css'
 
 const DEFAULT_FILTERS: FilterState = {
   window: 'all',
-  customDate: '',
+  customFromDate: '',
+  customToDate: '',
   minLevel: 'INFO',
   search: '',
 }

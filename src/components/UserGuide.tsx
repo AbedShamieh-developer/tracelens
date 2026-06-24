@@ -5,7 +5,7 @@ export default function UserGuide() {
     <div className="userguide" id="user-guide">
       <div className="userguide__header">
         <div className="userguide__badge">OPERATIONS PORTAL</div>
-        <h3 className="userguide__title">Oreyeon TraceLens Guide</h3>
+        <h3 className="userguide__title">MDU TraceLens Guide</h3>
         <p className="userguide__subtitle">
           Internal protocol for parsing, analyzing, and auditing CloudWatch log telemetry.
         </p>
@@ -15,27 +15,36 @@ export default function UserGuide() {
         {/* Step 1 */}
         <div className="userguide__card">
           <div className="userguide__card-num">01</div>
-          <h4 className="userguide__card-title">Extract Log Telemetry</h4>
+          <h4 className="userguide__card-title">Choose Your Source</h4>
           <p className="userguide__card-text">
-            Run your query in <strong>AWS CloudWatch Logs Insights</strong>. Export the results directly as a <strong>CSV</strong> format. Ensure the export contains at least <code>timestamp</code> (or <code>@timestamp</code>) and <code>message</code> fields.
+            Use <strong>Upload mode</strong> for exported CSV files, or switch to <strong>S3 bucket mode</strong> to load aviation log objects directly from the configured client bucket.
           </p>
         </div>
 
         {/* Step 2 */}
         <div className="userguide__card">
           <div className="userguide__card-num">02</div>
-          <h4 className="userguide__card-title">Ingest & Parse File</h4>
+          <h4 className="userguide__card-title">Upload CSV Logs</h4>
           <p className="userguide__card-text">
-            Drag and drop the exported CSV file directly into the landing zone above, or select it manually. The client-side parser will securely process and structure the log entries entirely offline.
+            Export from <strong>AWS CloudWatch Logs Insights</strong> as <strong>CSV</strong>, then drag the file into the landing zone. Include at least <code>timestamp</code> or <code>@timestamp</code> and <code>message</code>.
           </p>
         </div>
 
         {/* Step 3 */}
         <div className="userguide__card">
           <div className="userguide__card-num">03</div>
+          <h4 className="userguide__card-title">Load From S3</h4>
+          <p className="userguide__card-text">
+            In <strong>S3 bucket mode</strong>, select the aviation client, refresh the bucket listing, and open the available log objects. TraceLens downloads authorized objects and parses them into the same viewer.
+          </p>
+        </div>
+
+        {/* Step 4 */}
+        <div className="userguide__card">
+          <div className="userguide__card-num">04</div>
           <h4 className="userguide__card-title">Query & Filter</h4>
           <p className="userguide__card-text">
-            Refine telemetry streams in real time. Use <strong>Regex</strong> for full-text search, filter logs dynamically relative to the current time, or adjust log levels to isolate critical failures instantly.
+            Refine upload or S3 telemetry in real time. Use <strong>Regex</strong> search, date filters, log levels, and insights to isolate critical aviation events instantly.
           </p>
         </div>
       </div>
@@ -46,7 +55,7 @@ export default function UserGuide() {
           <path d="M7 5V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           <circle cx="7" cy="11.5" r="0.75" fill="currentColor"/>
         </svg>
-        <span><strong>Oreyeon security protocol:</strong> Data parsing is performed locally. No log payloads or system telemetry are transmitted to external servers.</span>
+        <span><strong>MDU security protocol:</strong> Upload parsing stays local in the browser. S3 mode only loads authorized bucket objects for the selected client workspace.</span>
       </div>
     </div>
   );

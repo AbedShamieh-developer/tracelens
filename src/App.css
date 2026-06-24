@@ -21,7 +21,7 @@
   left: -5%;
   width: 500px;
   height: 500px;
-  background: rgba(255, 255, 255, 0.015);
+  background: rgba(0, 84, 115, 0.22);
 }
 
 .app__ambient--2 {
@@ -29,7 +29,7 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(123, 226, 255, 0.12);
 }
 
 .app__header {
@@ -56,9 +56,10 @@
 }
 
 .app__logo-img {
-  height: 28px;
-  width: auto;
+  height: 42px;
+  width: 42px;
   object-fit: contain;
+  border-radius: 12px;
 }
 
 .app__logo:hover {
@@ -107,7 +108,7 @@
   padding: 4px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 84, 115, 0.12);
   box-shadow: var(--shadow-sm);
 }
 
@@ -135,9 +136,9 @@
 }
 
 .app__mode-button--active {
-  color: #000;
+  color: #f3fbff;
   background: var(--accent-gradient);
-  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 18px rgba(0, 84, 115, 0.34);
 }
 
 .app__auth-actions,
@@ -174,9 +175,9 @@
 }
 
 .app__auth-btn--primary {
-  color: #000;
+  color: #f3fbff;
   background: var(--accent-gradient);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), var(--shadow-md);
+  box-shadow: 0 0 0 1px rgba(123, 226, 255, 0.2), var(--shadow-md);
 }
 
 .app__auth-btn--secondary {

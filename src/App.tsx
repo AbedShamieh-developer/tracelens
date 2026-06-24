@@ -55,7 +55,7 @@ function LoadingState() {
           <p className="app__eyebrow">Loading secure session</p>
           <h2 className="app__loading-title">Checking access</h2>
           <p className="app__loading-copy">
-            We are verifying your Clerk session before opening TraceLens.
+            We are verifying your Clerk session before opening MDU TraceLens.
           </p>
         </div>
       </ClerkLoading>
@@ -68,7 +68,7 @@ function SignedOutState() {
     <section className="app__access-screen">
       <div className="app__access-card">
         <p className="app__eyebrow">Secure workspace</p>
-        <h2 className="app__access-title">Sign in to open TraceLens</h2>
+        <h2 className="app__access-title">Sign in to open MDU TraceLens</h2>
         <p className="app__access-copy">
           The log viewer stays locked until you create an account and receive approval.
         </p>
@@ -149,11 +149,11 @@ export default function App() {
       <header className="app__header" id="app-header">
         <div className="app__header-left">
           <div className="app__logo">
-            <img src="/logo.jpg" alt="Oreyeon TraceLens" className="app__logo-img" />
+            <img src="/mdu-tracelens-logo.png" alt="MDU TraceLens" className="app__logo-img" />
           </div>
           <div className="app__title-group">
             <h1 className="app__title">
-              Oreyeon <span className="app__title-accent">TraceLens</span>
+              MDU <span className="app__title-accent">TraceLens</span>
             </h1>
             <p className="app__subtitle">CloudWatch Log Analysis</p>
           </div>
@@ -308,9 +308,9 @@ export default function App() {
       </main>
 
       <footer className="app__footer">
-        <span>Oreyeon</span>
+        <span>MDU</span>
         <span className="app__footer-dot">|</span>
-        <span>TraceLens v2.1.1</span>
+        <span>MDU TraceLens v2.1.1</span>
       </footer>
     </div>
   )

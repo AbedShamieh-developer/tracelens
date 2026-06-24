@@ -139,7 +139,7 @@ export default function DropZone({ onFileParsed }: DropZoneProps) {
           ) : (
             <>
               <div className="dropzone__icon-wrapper">
-                <img src="/logo.jpg" alt="Oreyeon Logo" className="dropzone__icon" />
+                <img src="/mdu-tracelens-logo.png" alt="MDU TraceLens logo" className="dropzone__icon" />
                 <div className="dropzone__icon-glow" />
               </div>
 

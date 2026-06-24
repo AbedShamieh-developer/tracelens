@@ -1,38 +1,38 @@
 /* ================================================
-   Oreyeon TraceLens  |  Global Design System
+   MDU TraceLens  |  Global Design System
    ================================================ */
 
 :root {
-  /* ---- Core Palette (True Black) ---- */
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-elevated: #161616;
-  --bg-hover: #1a1a1a;
-  --bg-active: #222222;
+  /* ---- Core Palette (MDU deep teal) ---- */
+  --bg-primary: #001824;
+  --bg-secondary: #002638;
+  --bg-tertiary: #00364d;
+  --bg-elevated: #00445e;
+  --bg-hover: #005473;
+  --bg-active: #00658a;
 
   /* ---- Glass & Overlay ---- */
-  --glass: rgba(10, 10, 10, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --overlay: rgba(0, 0, 0, 0.65);
+  --glass: rgba(0, 38, 56, 0.72);
+  --glass-border: rgba(111, 214, 255, 0.12);
+  --overlay: rgba(0, 18, 28, 0.72);
 
   /* ---- Borders ---- */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-focus: rgba(255, 255, 255, 0.25);
+  --border-subtle: rgba(134, 219, 255, 0.1);
+  --border-default: rgba(151, 226, 255, 0.16);
+  --border-focus: rgba(188, 239, 255, 0.36);
 
   /* ---- Typography Colors ---- */
-  --text-primary: #f0f0f0;
-  --text-secondary: #a0a0a0;
-  --text-tertiary: #666666;
-  --text-muted: #3a3a3a;
+  --text-primary: #f3fbff;
+  --text-secondary: #a9cfdd;
+  --text-tertiary: #6fa2b4;
+  --text-muted: #3f7183;
 
   /* ---- Accent / Brand ---- */
-  --accent-primary: #ffffff;
-  --accent-primary-glow: rgba(255, 255, 255, 0.12);
-  --accent-secondary: #c0c0c0;
-  --accent-cyan: #22d3ee;
-  --accent-gradient: linear-gradient(135deg, #ffffff 0%, #b0b0b0 50%, #d0d0d0 100%);
+  --accent-primary: #005473;
+  --accent-primary-glow: rgba(0, 84, 115, 0.34);
+  --accent-secondary: #58c7ee;
+  --accent-cyan: #7be2ff;
+  --accent-gradient: linear-gradient(135deg, #7be2ff 0%, #1a88ac 48%, #005473 100%);
 
   /* ---- Log-Level Colors ---- */
   --level-debug: #6e7681;
@@ -54,10 +54,10 @@
   --radius-full: 9999px;
 
   /* ---- Shadows ---- */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 40px rgba(255, 255, 255, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 12, 18, 0.55);
+  --shadow-md: 0 4px 12px rgba(0, 12, 18, 0.58);
+  --shadow-lg: 0 8px 32px rgba(0, 12, 18, 0.68);
+  --shadow-glow: 0 0 40px rgba(0, 84, 115, 0.18);
 
   /* ---- Fonts ---- */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -104,7 +104,7 @@ body::before {
   left: -20%;
   width: 60%;
   height: 60%;
-  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0, 132, 180, 0.18) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -116,7 +116,7 @@ body::after {
   right: -15%;
   width: 50%;
   height: 50%;
-  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.01) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(123, 226, 255, 0.12) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -174,8 +174,8 @@ body::after {
 }
 
 @keyframes borderGlow {
-  0%, 100% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(255,255,255,0.05); }
-  50% { border-color: rgba(255,255,255,0.35); box-shadow: 0 0 30px rgba(255,255,255,0.08); }
+  0%, 100% { border-color: rgba(123,226,255,0.22); box-shadow: 0 0 20px rgba(0,84,115,0.18); }
+  50% { border-color: rgba(123,226,255,0.42); box-shadow: 0 0 30px rgba(0,84,115,0.24); }
 }
 
 @keyframes float {

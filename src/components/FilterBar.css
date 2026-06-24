@@ -59,17 +59,17 @@
 }
 
 .filterbar__chip--active {
-  color: #000;
-  background: var(--text-primary) !important;
-  border-color: var(--text-primary) !important;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+  color: #f3fbff;
+  background: var(--accent-gradient) !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 12px rgba(0, 84, 115, 0.35);
 }
 
 .filterbar__chip--custom.filterbar__chip--active {
-  color: #0f172a;
-  background: linear-gradient(135deg, #f9d976, #f39f86) !important;
+  color: #f3fbff;
+  background: var(--accent-gradient) !important;
   border-color: transparent !important;
-  box-shadow: 0 2px 10px rgba(243, 159, 134, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 84, 115, 0.38);
 }
 
 .filterbar__custom-date {
@@ -107,8 +107,8 @@
 }
 
 .filterbar__date-input:focus {
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(0, 84, 115, 0.2);
 }
 
 .filterbar__custom-clear {
@@ -197,8 +197,8 @@
 
 .filterbar__search:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(0, 84, 115, 0.2);
 }
 
 .filterbar__search-clear {

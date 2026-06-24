@@ -25,37 +25,37 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(0, 84, 115, 0.18) 0%, transparent 70%);
   pointer-events: none;
   transition: opacity var(--duration-normal) var(--ease);
 }
 
 .dropzone:hover {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--border-focus);
   background: var(--bg-tertiary);
   box-shadow: var(--shadow-glow);
 }
 
 .dropzone:hover::before {
   opacity: 1;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(123, 226, 255, 0.14) 0%, transparent 70%);
 }
 
 /* ---- Dragging State ---- */
 .dropzone--dragging {
-  border-color: rgba(255, 255, 255, 0.6) !important;
-  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(123, 226, 255, 0.68) !important;
+  background: rgba(0, 84, 115, 0.18) !important;
   animation: borderGlow 2s ease-in-out infinite;
   transform: scale(1.005);
 }
 
 .dropzone--dragging::before {
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%) !important;
+  background: radial-gradient(ellipse at center, rgba(123, 226, 255, 0.2) 0%, transparent 70%) !important;
 }
 
 /* ---- Parsing State ---- */
 .dropzone--parsing {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--border-focus);
   pointer-events: none;
 }
 
@@ -79,10 +79,10 @@
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.4) 10%,
+    rgba(123, 226, 255, 0.45) 10%,
     transparent 20%,
     transparent 80%,
-    rgba(255, 255, 255, 0.8) 90%,
+    rgba(123, 226, 255, 0.85) 90%,
     transparent 100%
   );
   animation: spin 4s linear infinite;
@@ -106,10 +106,10 @@
   opacity: 1;
 }
 
-.dropzone__corner--tl { top: 12px; left: 12px; border-top: 2px solid rgba(255,255,255,0.4); border-left: 2px solid rgba(255,255,255,0.4); border-radius: 4px 0 0 0; }
-.dropzone__corner--tr { top: 12px; right: 12px; border-top: 2px solid rgba(255,255,255,0.4); border-right: 2px solid rgba(255,255,255,0.4); border-radius: 0 4px 0 0; }
-.dropzone__corner--bl { bottom: 12px; left: 12px; border-bottom: 2px solid rgba(255,255,255,0.4); border-left: 2px solid rgba(255,255,255,0.4); border-radius: 0 0 0 4px; }
-.dropzone__corner--br { bottom: 12px; right: 12px; border-bottom: 2px solid rgba(255,255,255,0.4); border-right: 2px solid rgba(255,255,255,0.4); border-radius: 0 0 4px 0; }
+.dropzone__corner--tl { top: 12px; left: 12px; border-top: 2px solid rgba(123,226,255,0.45); border-left: 2px solid rgba(123,226,255,0.45); border-radius: 4px 0 0 0; }
+.dropzone__corner--tr { top: 12px; right: 12px; border-top: 2px solid rgba(123,226,255,0.45); border-right: 2px solid rgba(123,226,255,0.45); border-radius: 0 4px 0 0; }
+.dropzone__corner--bl { bottom: 12px; left: 12px; border-bottom: 2px solid rgba(123,226,255,0.45); border-left: 2px solid rgba(123,226,255,0.45); border-radius: 0 0 0 4px; }
+.dropzone__corner--br { bottom: 12px; right: 12px; border-bottom: 2px solid rgba(123,226,255,0.45); border-right: 2px solid rgba(123,226,255,0.45); border-radius: 0 0 4px 0; }
 
 /* ---- Content ---- */
 .dropzone__content {
@@ -155,7 +155,7 @@
   height: 140px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(123, 226, 255, 0.16) 0%, transparent 70%);
   opacity: 0;
   transition: opacity var(--duration-normal) var(--ease);
 }

@@ -4,6 +4,7 @@ import { ApiError, fetchClients, fetchLogs } from '../api'
 import {
   countLevels,
   filterEntries,
+  sortEntriesForTimeline,
 } from '../logParser'
 import type { FilterState, LogEntry } from '../types'
 import { createLogParsePool } from '../lib/logParsePool'
@@ -321,8 +322,8 @@ export default function BucketLogsView() {
         }
 
         startTransition(() => {
-          setEntries(allEntries.sort((a, b) => b.epoch - a.epoch))
-          setDeliveryFailures(allFailures.sort((a, b) => b.epoch - a.epoch))
+          setEntries(sortEntriesForTimeline(allEntries))
+          setDeliveryFailures(sortEntriesForTimeline(allFailures))
         })
 
         if (failures.length > 0 && parsedEntries === 0) {

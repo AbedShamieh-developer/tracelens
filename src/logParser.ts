@@ -37,6 +37,7 @@ const WINDOW_MINUTES: Record<TimeWindow, number> = {
 };
 
 const LINE_RE = /^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}[,.]\d{3})\s+-\s+(\S+)\s+-\s+(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s+-\s+(.*)$/s;
+const LAMBDA_REQUEST_RE = /\b(?:START|END|REPORT)\s+RequestId:\s+([^\s]+)/;
 
 // ── Helpers ────────────────────────────────────
 
@@ -117,6 +118,41 @@ function parseLocalDateBounds(value: string): { start: number; end: number } | n
   return { start, end };
 }
 
+function getRuntimeOrder(msg: string): number {
+  const head = msg.trim().split(/\s+/)[0] || '';
+
+  if (head === 'START') return 0;
+  if (head === 'END') return 2;
+  if (head === 'REPORT') return 3;
+  return 1;
+}
+
+export function sortEntriesForTimeline(entries: LogEntry[]): LogEntry[] {
+  const groups = new Map<string, { entries: LogEntry[]; latestEpoch: number; firstIndex: number }>();
+
+  entries.forEach((entry, index) => {
+    const key = entry.requestId ?? `entry:${index}`;
+    const group = groups.get(key);
+
+    if (group) {
+      group.entries.push(entry);
+      group.latestEpoch = Math.max(group.latestEpoch, entry.epoch);
+    } else {
+      groups.set(key, { entries: [entry], latestEpoch: entry.epoch, firstIndex: index });
+    }
+  });
+
+  return Array.from(groups.values())
+    .sort((a, b) => b.latestEpoch - a.latestEpoch || a.firstIndex - b.firstIndex)
+    .flatMap((group) =>
+      group.entries.sort(
+        (a, b) =>
+          getRuntimeOrder(a.msg) - getRuntimeOrder(b.msg) ||
+          a.epoch - b.epoch,
+      ),
+    );
+}
+
 function parseLogText(text: string): LogEntry[] {
   const trimmed = text.trim();
 
@@ -180,8 +216,7 @@ function parseJsonLogPayload(payload: unknown): LogEntry[] {
       return [parseMessage(epoch, JSON.stringify(record))];
     });
 
-    entries.sort((a, b) => a.epoch - b.epoch);
-    return entries.filter(e => !isBinaryCorrupted(e.msg));
+    return sortEntriesForTimeline(entries.filter(e => !isBinaryCorrupted(e.msg)));
   }
 
   if (!payload || typeof payload !== 'object') {
@@ -254,8 +289,7 @@ function parseLineLogText(text: string): LogEntry[] {
     entries.push(parseMessage(Date.now(), line));
   }
 
-  entries.sort((a, b) => a.epoch - b.epoch);
-  return entries.filter(e => !isBinaryCorrupted(e.msg));
+  return sortEntriesForTimeline(entries.filter(e => !isBinaryCorrupted(e.msg)));
 }
 
 // ── GZ (CloudWatch S3 export) Parsing ─────────
@@ -305,8 +339,7 @@ export function parseCloudWatchExportJson(json: unknown): LogEntry[] {
     return parseMessage(epoch, message)
   })
 
-  entries.sort((a, b) => a.epoch - b.epoch)
-  return entries.filter(e => !isBinaryCorrupted(e.msg))
+  return sortEntriesForTimeline(entries.filter(e => !isBinaryCorrupted(e.msg)))
 }
 
 // ── CSV Parsing ────────────────────────────────
@@ -371,6 +404,7 @@ function parseMessage(epochMs: number, rawMsg: string): LogEntry {
     epoch: epochMs, ts: epochToTs(epochMs),
     logger: logger || 'lambda.runtime', level,
     msg: stripped, extra: '',
+    requestId: stripped.match(LAMBDA_REQUEST_RE)?.[1],
   };
 }
 
@@ -449,8 +483,7 @@ export function parseCSV(text: string): LogEntry[] {
     entries.push(parseMessage(epoch, fields[msgIdx] || ''));
   }
 
-  entries.sort((a, b) => a.epoch - b.epoch);
-  return entries;
+  return sortEntriesForTimeline(entries);
 }
 
 // ── Filtering ──────────────────────────────────

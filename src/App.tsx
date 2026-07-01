@@ -15,6 +15,7 @@ const DEFAULT_FILTERS: FilterState = {
   window: 'all',
   customFromDate: '',
   customToDate: '',
+  lineLimit: 500,
   minLevel: 'INFO',
   search: '',
 }
@@ -119,11 +120,13 @@ export default function App() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
   const [mode, setMode] = useState<AppMode>('upload')
   const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
+  const [focusedEntry, setFocusedEntry] = useState<{ entry: LogEntry; token: number } | null>(null)
   const { isLoaded, isSignedIn, user } = useUser()
 
   const handleFileParsed = useCallback((entries: LogEntry[], name: string) => {
     setAllEntries(entries)
     setFileName(name)
+    setFocusedEntry(null)
   }, [])
 
   const handleNewFile = useCallback(() => {
@@ -131,6 +134,21 @@ export default function App() {
     setFileName('')
     setFilters(DEFAULT_FILTERS)
     setViewTab('logs')
+    setFocusedEntry(null)
+  }, [])
+
+  const handleOpenEntryInFullLog = useCallback((entry: LogEntry) => {
+    setViewTab('logs')
+    setFilters((current) => ({
+      ...current,
+      window: 'all',
+      customFromDate: '',
+      customToDate: '',
+      lineLimit: 'all',
+      minLevel: 'DEBUG',
+      search: '',
+    }))
+    setFocusedEntry((current) => ({ entry, token: (current?.token ?? 0) + 1 }))
   }, [])
 
   const filtered = useMemo(() => filterEntries(allEntries, filters), [allEntries, filters])
@@ -282,7 +300,16 @@ export default function App() {
                   counts={counts}
                   fileName={fileName}
                 />
-                <LogTable entries={filtered} />
+                <LogTable
+                  entries={filtered}
+                  sourceEntries={allEntries}
+                  displayLimit={filters.lineLimit}
+                  fileName={fileName}
+                  analyzerName={displayName}
+                  focusedEntry={focusedEntry?.entry}
+                  focusToken={focusedEntry?.token ?? 0}
+                  onOpenInFullLog={handleOpenEntryInFullLog}
+                />
               </>
             ) : (
               <>
@@ -303,7 +330,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          <BucketLogsView />
+          <BucketLogsView analyzerName={displayName} />
         )}
       </main>
 

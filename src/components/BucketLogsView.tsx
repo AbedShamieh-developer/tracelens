@@ -19,11 +19,16 @@ const DEFAULT_FILTERS: FilterState = {
   window: 'all',
   customFromDate: '',
   customToDate: '',
+  lineLimit: 500,
   minLevel: 'INFO',
   search: '',
 }
 
 const FALLBACK_CLIENTS = ['coimbra', 'yuma', 'dev']
+
+interface BucketLogsViewProps {
+  analyzerName?: string
+}
 
 interface BucketSource {
   key: string
@@ -168,7 +173,7 @@ async function mapWithConcurrency<T>(
   await Promise.all(runners)
 }
 
-export default function BucketLogsView() {
+export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: BucketLogsViewProps) {
   const parserPoolRef = useRef<ReturnType<typeof createLogParsePool> | null>(null)
 
   useEffect(() => {
@@ -195,7 +200,22 @@ export default function BucketLogsView() {
   const [downloadedCount, setDownloadedCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
+  const [focusedEntry, setFocusedEntry] = useState<{ entry: LogEntry; token: number } | null>(null)
   const refresh = useCallback(() => setRefreshTick((value) => value + 1), [])
+
+  const handleOpenEntryInFullLog = useCallback((entry: LogEntry) => {
+    setViewTab('logs')
+    setFilters((current) => ({
+      ...current,
+      window: 'all',
+      customFromDate: '',
+      customToDate: '',
+      lineLimit: 'all',
+      minLevel: 'DEBUG',
+      search: '',
+    }))
+    setFocusedEntry((current) => ({ entry, token: (current?.token ?? 0) + 1 }))
+  }, [])
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
@@ -263,6 +283,7 @@ export default function BucketLogsView() {
       setSources([])
       setEntries([])
       setDeliveryFailures([])
+      setFocusedEntry(null)
 
       try {
         const payload = await fetchLogs(selectedClient, getToken, controller.signal)
@@ -494,7 +515,16 @@ export default function BucketLogsView() {
                   counts={counts}
                   fileName={fileName}
                 />
-                <LogTable entries={filtered} />
+                <LogTable
+                  entries={filtered}
+                  sourceEntries={entries}
+                  displayLimit={filters.lineLimit}
+                  fileName={fileName}
+                  analyzerName={analyzerName}
+                  focusedEntry={focusedEntry?.entry}
+                  focusToken={focusedEntry?.token ?? 0}
+                  onOpenInFullLog={handleOpenEntryInFullLog}
+                />
               </>
             ) : (
               <>
@@ -541,7 +571,11 @@ export default function BucketLogsView() {
                   <p className="bucket-view__failures-note">
                     These records failed Firehose delivery and do not contain app log data.
                   </p>
-                  <LogTable entries={deliveryFailures} />
+                  <LogTable
+                    entries={deliveryFailures}
+                    fileName={`${fileName} delivery failures`}
+                    analyzerName={analyzerName}
+                  />
                 </div>
               )}
             </div>

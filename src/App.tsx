@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { ClerkLoading, SignInButton, SignOutButton, SignUpButton, UserButton, useUser } from '@clerk/clerk-react'
+import { useAuth } from 'react-oidc-context'
 import DropZone from './components/DropZone'
 import FilterBar from './components/FilterBar'
 import SummaryBar from './components/SummaryBar'
@@ -22,93 +22,70 @@ const DEFAULT_FILTERS: FilterState = {
 
 type AppMode = 'upload' | 'bucket'
 
-type ClerkUser = ReturnType<typeof useUser>['user']
+type CognitoUser = ReturnType<typeof useAuth>['user']
 
-function isApprovedUser(user: ClerkUser) {
-  if (!user) {
-    return false
+function getAppBaseUrl() {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5174/'
   }
 
-  const metadata = user.publicMetadata as Record<string, unknown> | undefined
-  return metadata?.approved === true || metadata?.approvalStatus === 'approved'
+  return `${window.location.origin}/`
 }
 
-function getDisplayName(user: ClerkUser) {
+function getDisplayName(user: CognitoUser) {
   if (!user) {
     return 'there'
   }
 
-  return (
-    user.firstName?.trim() ||
-    user.fullName?.trim() ||
-    user.username?.trim() ||
-    user.primaryEmailAddress?.emailAddress.split('@')[0] ||
-    'there'
+  const profile = user.profile
+  const name = profile.given_name?.trim() || profile.name?.trim()
+
+  if (name) {
+    return name.split(/\s+/)[0]
+  }
+
+  const fallbackName = (
+    profile.preferred_username?.trim() ||
+    profile.email?.split('@')[0]?.trim() ||
+    ''
   )
+    .replace(/\d+$/, '')
+    .replace(/^abdulrahmanshamieh$/i, 'abdulrahman')
+    .split(/[._-]+/)[0]
+
+  return fallbackName || 'there'
 }
 
 function LoadingState() {
   return (
     <div className="app__loading-shell">
-      <ClerkLoading>
-        <div className="app__loading-card">
-          <div className="app__loading-ring" />
-          <p className="app__eyebrow">Loading secure session</p>
-          <h2 className="app__loading-title">Checking access</h2>
-          <p className="app__loading-copy">
-            We are verifying your Clerk session before opening MDU TraceLens.
-          </p>
-        </div>
-      </ClerkLoading>
+      <div className="app__loading-card">
+        <div className="app__loading-ring" />
+        <p className="app__eyebrow">Loading secure session</p>
+        <h2 className="app__loading-title">Checking access</h2>
+        <p className="app__loading-copy">
+          We are verifying your Cognito session before opening MDU TraceLens.
+        </p>
+      </div>
     </div>
   )
 }
 
-function SignedOutState() {
+function SignedOutState({ onSignIn }: { onSignIn: () => void }) {
   return (
     <section className="app__access-screen">
       <div className="app__access-card">
         <p className="app__eyebrow">Secure workspace</p>
         <h2 className="app__access-title">Sign in to open MDU TraceLens</h2>
         <p className="app__access-copy">
-          The log viewer stays locked until you create an account and receive approval.
+          The log viewer stays locked until you authenticate with the MDU workspace.
         </p>
         <div className="app__access-actions">
-          <SignInButton mode="modal">
-            <button type="button" className="app__auth-btn app__auth-btn--secondary">
-              Sign in
-            </button>
-          </SignInButton>
-          <SignUpButton mode="modal" unsafeMetadata={{ approvalStatus: 'pending' }}>
-            <button type="button" className="app__auth-btn app__auth-btn--primary">
-              Request access
-            </button>
-          </SignUpButton>
+          <button type="button" className="app__auth-btn app__auth-btn--primary" onClick={onSignIn}>
+            Sign in
+          </button>
         </div>
-        <p className="app__access-note">New accounts enter an approval queue for the admin team.</p>
-      </div>
-    </section>
-  )
-}
-
-function PendingApprovalState() {
-  return (
-    <section className="app__access-screen">
-      <div className="app__access-card app__access-card--pending">
-        <p className="app__eyebrow">Approval required</p>
-        <h2 className="app__access-title">Your account is waiting on admin review</h2>
-        <p className="app__access-copy">
-          You are signed in, but the workspace is locked until an admin marks your account as approved in Clerk.
-        </p>
-        <div className="app__access-actions">
-          <UserButton />
-          <SignOutButton>
-            <button type="button" className="app__auth-btn app__auth-btn--secondary">
-              Sign out
-            </button>
-          </SignOutButton>
-        </div>
-        <p className="app__access-note">Once approval is set, refresh the page to continue.</p>
+        <p className="app__access-note">Authentication is handled through the MDU Cognito workspace.</p>
       </div>
     </section>
   )
@@ -121,7 +98,26 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>('upload')
   const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
   const [focusedEntry, setFocusedEntry] = useState<{ entry: LogEntry; token: number } | null>(null)
-  const { isLoaded, isSignedIn, user } = useUser()
+  const auth = useAuth()
+
+  const handleSignIn = useCallback(() => {
+    void auth.signinRedirect({ redirect_uri: getAppBaseUrl() })
+  }, [auth])
+
+  const handleSignOut = useCallback(async () => {
+    const clientId = '4570btirsf7kejc3fjkbb6f9jc'
+    const logoutUri = getAppBaseUrl()
+    const cognitoDomain = 'https://eu-central-1umr2kprl8.auth.eu-central-1.amazoncognito.com'
+
+    await auth.removeUser()
+
+    const logoutUrl =
+      `${cognitoDomain}/logout` +
+      `?client_id=${encodeURIComponent(clientId)}` +
+      `&logout_uri=${encodeURIComponent(logoutUri)}`
+
+    window.location.assign(logoutUrl)
+  }, [auth])
 
   const handleFileParsed = useCallback((entries: LogEntry[], name: string) => {
     setAllEntries(entries)
@@ -154,9 +150,9 @@ export default function App() {
   const filtered = useMemo(() => filterEntries(allEntries, filters), [allEntries, filters])
   const counts = useMemo(() => countLevels(filtered), [filtered])
   const hasData = allEntries.length > 0
-  const approved = isApprovedUser(user)
-  const displayName = getDisplayName(user)
-  const canUsePlatform = Boolean(isLoaded && isSignedIn && approved)
+  const displayName = getDisplayName(auth.user)
+  const isSignedIn = auth.isAuthenticated
+  const canUsePlatform = Boolean(isSignedIn)
   const isUploadMode = mode === 'upload'
 
   return (
@@ -221,42 +217,42 @@ export default function App() {
         <div className="app__header-right">
           {!isSignedIn && (
             <div className="app__auth-actions">
-              <SignInButton mode="modal">
-                <button type="button" className="app__auth-btn app__auth-btn--secondary">
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal" unsafeMetadata={{ approvalStatus: 'pending' }}>
-                <button type="button" className="app__auth-btn app__auth-btn--primary">
-                  Request access
-                </button>
-              </SignUpButton>
+              <button type="button" className="app__auth-btn app__auth-btn--primary" onClick={handleSignIn}>
+                Sign in
+              </button>
             </div>
           )}
           {isSignedIn && (
             <div className="app__user-area">
-              {approved ? (
-                <span className="app__status-pill app__status-pill--welcome">
-                  Welcome {displayName}
-                </span>
-              ) : (
-                <span className="app__status-pill app__status-pill--pending">
-                  Pending approval
-                </span>
-              )}
-              <UserButton />
+              <span className="app__status-pill app__status-pill--welcome">
+                Welcome {displayName}
+              </span>
+              <button type="button" className="app__auth-btn app__auth-btn--secondary" onClick={handleSignOut}>
+                Sign out
+              </button>
             </div>
           )}
         </div>
       </header>
 
       <main className="app__main">
-        {!isLoaded ? (
+        {auth.isLoading ? (
           <LoadingState />
+        ) : auth.error ? (
+          <section className="app__access-screen">
+            <div className="app__access-card app__access-card--pending">
+              <p className="app__eyebrow">Authentication error</p>
+              <h2 className="app__access-title">We could not open your session</h2>
+              <p className="app__access-copy">{auth.error.message}</p>
+              <div className="app__access-actions">
+                <button type="button" className="app__auth-btn app__auth-btn--primary" onClick={handleSignIn}>
+                  Try again
+                </button>
+              </div>
+            </div>
+          </section>
         ) : !isSignedIn ? (
-          <SignedOutState />
-        ) : !approved ? (
-          <PendingApprovalState />
+          <SignedOutState onSignIn={handleSignIn} />
         ) : isUploadMode ? !hasData ? (
           <>
             <DropZone onFileParsed={handleFileParsed} />

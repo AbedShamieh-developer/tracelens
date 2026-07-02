@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from 'react-oidc-context'
 import { ApiError, fetchClients, fetchLogs } from '../api'
 import {
   countLevels,
@@ -25,6 +25,11 @@ const DEFAULT_FILTERS: FilterState = {
 }
 
 const FALLBACK_CLIENTS = ['coimbra', 'yuma', 'dev']
+const API_TOKEN_TYPE = (import.meta.env.VITE_COGNITO_API_TOKEN_TYPE as string | undefined)?.trim().toLowerCase()
+const AUTHORIZATION_ERROR =
+  API_TOKEN_TYPE === 'id'
+    ? 'Authorization failed. The backend rejected your Cognito ID token. Check the API Gateway authorizer user pool, app client, and deployed stage.'
+    : 'Authorization failed. The backend rejected your Cognito access token. If the authorizer has no OAuth scopes, set VITE_COGNITO_API_TOKEN_TYPE=id.'
 
 interface BucketLogsViewProps {
   analyzerName?: string
@@ -184,7 +189,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
     }
   }, [])
 
-  const { isLoaded, isSignedIn, getToken } = useAuth()
+  const auth = useAuth()
   const [clients, setClients] = useState<string[]>([])
   const [selectedClient, setSelectedClient] = useState('')
   const [sources, setSources] = useState<BucketSource[]>([])
@@ -202,6 +207,10 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
   const [viewTab, setViewTab] = useState<'logs' | 'insights'>('logs')
   const [focusedEntry, setFocusedEntry] = useState<{ entry: LogEntry; token: number } | null>(null)
   const refresh = useCallback(() => setRefreshTick((value) => value + 1), [])
+  const apiToken = API_TOKEN_TYPE === 'id'
+    ? auth.user?.id_token ?? auth.user?.access_token
+    : auth.user?.access_token ?? auth.user?.id_token
+  const getApiToken = useCallback(async () => apiToken, [apiToken])
 
   const handleOpenEntryInFullLog = useCallback((entry: LogEntry) => {
     setViewTab('logs')
@@ -218,7 +227,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
   }, [])
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
+    if (auth.isLoading || !auth.isAuthenticated) {
       return
     }
 
@@ -230,7 +239,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
       setError(null)
 
       try {
-        const nextClients = await fetchClients(getToken, controller.signal)
+        const nextClients = await fetchClients(getApiToken, controller.signal)
         if (!active) {
           return
         }
@@ -248,7 +257,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
         setSelectedClient(fallback[0] ?? '')
         setError(
           isUnauthorizedError(err)
-            ? 'Authorization failed. Your Clerk token was not accepted by the backend.'
+            ? AUTHORIZATION_ERROR
             : getErrorMessage(err),
         )
       } finally {
@@ -264,10 +273,10 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
       active = false
       controller.abort()
     }
-  }, [getToken, isLoaded, isSignedIn])
+  }, [auth.isAuthenticated, auth.isLoading, getApiToken])
 
   useEffect(() => {
-    if (!selectedClient || !isLoaded || !isSignedIn) {
+    if (!selectedClient || auth.isLoading || !auth.isAuthenticated) {
       return
     }
 
@@ -286,7 +295,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
       setFocusedEntry(null)
 
       try {
-        const payload = await fetchLogs(selectedClient, getToken, controller.signal)
+        const payload = await fetchLogs(selectedClient, getApiToken, controller.signal)
         if (!active) {
           return
         }
@@ -368,7 +377,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
         setDeliveryFailures([])
         setError(
           isUnauthorizedError(err)
-            ? 'Authorization failed. Your Clerk token was not accepted by the backend.'
+            ? AUTHORIZATION_ERROR
             : getErrorMessage(err),
         )
       } finally {
@@ -384,7 +393,7 @@ export default function BucketLogsView({ analyzerName = 'TraceLens analyst' }: B
       active = false
       controller.abort()
     }
-  }, [getToken, isLoaded, isSignedIn, refreshTick, selectedClient])
+  }, [auth.isAuthenticated, auth.isLoading, getApiToken, refreshTick, selectedClient])
 
   const filtered = useMemo(() => filterEntries(entries, filters), [entries, filters])
   const counts = useMemo(() => countLevels(filtered), [filtered])

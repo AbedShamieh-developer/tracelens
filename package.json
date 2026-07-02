@@ -10,10 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.61.3",
     "@react-pdf/renderer": "^4.5.1",
+    "oidc-client-ts": "^3.5.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-oidc-context": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

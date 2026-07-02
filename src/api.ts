@@ -17,7 +17,7 @@ export class ApiError extends Error {
 
 const DEFAULT_API_BASE_URL = 'https://hmf3qmru35.execute-api.eu-central-1.amazonaws.com/prod'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() || DEFAULT_API_BASE_URL
-const EXPECTED_CLERK_ISSUER_HOST = 'bright-opossum-36.clerk.accounts.dev'
+const EXPECTED_COGNITO_ISSUER = 'https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_umR2kpRl8'
 
 type TokenProvider = () => Promise<string | null | undefined>
 
@@ -84,9 +84,9 @@ async function authorizedJsonRequest<T>(path: string, getToken: TokenProvider, s
   const payload = decodeJwtPayload(token)
   const issuer = typeof payload?.iss === 'string' ? payload.iss : undefined
 
-  if (!issuer || !issuer.includes(EXPECTED_CLERK_ISSUER_HOST)) {
+  if (issuer !== EXPECTED_COGNITO_ISSUER) {
     throw new ApiError(
-      `Your browser is signed into a different Clerk project. The token issuer must include ${EXPECTED_CLERK_ISSUER_HOST}, but got ${issuer ?? 'missing issuer'}.`,
+      `Your browser is signed into a different Cognito user pool. The token issuer must be ${EXPECTED_COGNITO_ISSUER}, but got ${issuer ?? 'missing issuer'}.`,
       401,
     )
   }

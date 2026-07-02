@@ -33,6 +33,7 @@
   --accent-secondary: #58c7ee;
   --accent-cyan: #7be2ff;
   --accent-gradient: linear-gradient(135deg, #7be2ff 0%, #1a88ac 48%, #005473 100%);
+  --accent-button-gradient: linear-gradient(135deg, #1aa7cc 0%, #087493 52%, #004d69 100%);
 
   /* ---- Log-Level Colors ---- */
   --level-debug: #6e7681;

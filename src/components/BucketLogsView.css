@@ -341,8 +341,8 @@
 
 .bucket-view__copy-btn--done {
   color: #f3fbff;
-  background: var(--accent-gradient);
-  border-color: transparent;
+  background: var(--accent-button-gradient);
+  border-color: rgba(0, 84, 115, 0.72);
 }
 
 @media (max-width: 768px) {

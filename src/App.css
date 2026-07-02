@@ -137,7 +137,7 @@
 
 .app__mode-button--active {
   color: #f3fbff;
-  background: var(--accent-gradient);
+  background: var(--accent-button-gradient);
   box-shadow: 0 6px 18px rgba(0, 84, 115, 0.34);
 }
 
@@ -176,8 +176,9 @@
 
 .app__auth-btn--primary {
   color: #f3fbff;
-  background: var(--accent-gradient);
-  box-shadow: 0 0 0 1px rgba(123, 226, 255, 0.2), var(--shadow-md);
+  background: var(--accent-button-gradient);
+  border-color: rgba(0, 84, 115, 0.72);
+  box-shadow: var(--shadow-md);
 }
 
 .app__auth-btn--secondary {

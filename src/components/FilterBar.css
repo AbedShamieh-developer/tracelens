@@ -60,15 +60,15 @@
 
 .filterbar__chip--active {
   color: #f3fbff;
-  background: var(--accent-gradient) !important;
-  border-color: transparent !important;
+  background: var(--accent-button-gradient) !important;
+  border-color: rgba(0, 84, 115, 0.72) !important;
   box-shadow: 0 0 12px rgba(0, 84, 115, 0.35);
 }
 
 .filterbar__chip--custom.filterbar__chip--active {
   color: #f3fbff;
-  background: var(--accent-gradient) !important;
-  border-color: transparent !important;
+  background: var(--accent-button-gradient) !important;
+  border-color: rgba(0, 84, 115, 0.72) !important;
   box-shadow: 0 2px 10px rgba(0, 84, 115, 0.38);
 }
 
